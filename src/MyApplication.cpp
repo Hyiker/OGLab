@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/matrix_operation.hpp>
+#include <glm/matrix.hpp>
 #include <iostream>
 #include <vector>
 
@@ -136,6 +137,7 @@ void MyApplication::loop() {
   // send uniforms
   shaderProgram.setUniform("projection", projection);
   shaderProgram.setUniform("view", view);
+  shaderProgram.setUniform("model", glm::mat4());
 
   glCheckError(__FILE__, __LINE__);
 

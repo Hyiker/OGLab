@@ -6,8 +6,8 @@
  *      * MIT
  */
 
-#ifndef OPENGL_CMAKE_SKELETON_MYAPPLICATION
-#define OPENGL_CMAKE_SKELETON_MYAPPLICATION
+#ifndef MYAPPLICATION_H
+#define MYAPPLICATION_H
 
 #include "Application.hpp"
 #include "Shader.hpp"
@@ -35,4 +35,4 @@ class MyApplication : public Application {
   GLuint vao, vbo, ibo;
 };
 
-#endif  // OPENGL_CMAKE_SKELETON_MYAPPLICATION
+#endif /* MYAPPLICATION_H */
