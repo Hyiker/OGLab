@@ -8,8 +8,9 @@
 
 #include "Application.hpp"
 
-#include <GL/glew.h>
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <glad/glad.h>
 #include <iostream>
 #include <stdexcept>
 
@@ -37,12 +38,14 @@ Application::Application()
 
   // setting the opengl version
   int major = 3;
-  int minor = 2;
+  int minor = 3;
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, major);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+#ifdef __APPLE__
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
   // create the window
   window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
   if (!window) {
@@ -51,14 +54,8 @@ Application::Application()
   }
 
   glfwMakeContextCurrent(window);
-
-  glewExperimental = GL_TRUE;
-  GLenum err = glewInit();
-
-  if (err != GLEW_OK) {
-    glfwTerminate();
-    throw std::runtime_error(string("Could initialize GLEW, error = ") +
-                             (const char*)glewGetErrorString(err));
+  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    throw std::runtime_error("Fail to initialize GLAD");
   }
 
   // get version info
