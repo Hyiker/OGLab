@@ -36,6 +36,6 @@ void main(void) {
     vec3 diffuse = max(dot(normal, lightDir), 0.0) * material.diffuse *
                    texture(material.diffuseTex, texCoord).rgb;
 
-    color = vec4((ambient + diffuse) * attenuation / 10.0, 1.0);
+    color = vec4((ambient + diffuse) * attenuation, 1.0);
     /*color = vec3(1,0,0);*/
 }

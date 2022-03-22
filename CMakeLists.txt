@@ -20,6 +20,8 @@ add_executable(opengl-cmake-skeleton
   src/Camera.cpp
   src/Shader.hpp
   src/Shader.cpp
+  src/Quad.hpp
+  src/Quad.cpp
   src/Scene.hpp
   src/Framebuffer.hpp
   src/Texture.hpp
