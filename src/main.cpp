@@ -9,7 +9,7 @@
 #include "MyApplication.hpp"
 
 int main(int argc, const char* argv[]) {
-  MyApplication app;
-  app.run();
-  return 0;
+    MyApplication app(argv[1], 1280, 960);
+    app.run();
+    return 0;
 }

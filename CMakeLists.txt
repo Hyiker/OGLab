@@ -1,10 +1,13 @@
 # Projects Settings
-cmake_minimum_required (VERSION 3.1)
+cmake_minimum_required (VERSION 3.20)
 project (opengl-lab)
 
 # The main executable
 add_executable(opengl-cmake-skeleton
   lib/glad/src/glad.c
+  lib/imgui/backends/imgui_impl_glfw.cpp
+  lib/imgui/backends/imgui_impl_opengl3.cpp
+  src/tiny_obj_loader.h
   src/Application.cpp
   src/Application.cpp
   src/MyApplication.cpp
@@ -12,21 +15,28 @@ add_executable(opengl-cmake-skeleton
   src/glError.hpp
   src/glError.cpp
   src/main.cpp
+  src/Camera.hpp
+  src/Camera.cpp
   src/Shader.hpp
   src/Shader.cpp
+  src/Scene.hpp
+  src/Scene.cpp
 )
 
-set_property(TARGET opengl-cmake-skeleton PROPERTY CXX_STANDARD 11)
+set_property(TARGET opengl-cmake-skeleton PROPERTY CXX_STANDARD 17)
 target_compile_options(opengl-cmake-skeleton PRIVATE -Wall)
+
 
 add_subdirectory(lib/glfw EXCLUDE_FROM_ALL)
 add_subdirectory(lib/glm EXCLUDE_FROM_ALL)
+add_subdirectory(lib/imgui EXCLUDE_FROM_ALL)
 
-target_include_directories(opengl-cmake-skeleton PRIVATE lib/glad/include)
+target_include_directories(opengl-cmake-skeleton PRIVATE lib/glad/include lib/imgui/backends)
 
 target_link_libraries(opengl-cmake-skeleton
   PRIVATE glfw
   PRIVATE glm
+  PRIVATE IMGUI
 )
 
 configure_file(
