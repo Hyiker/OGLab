@@ -80,21 +80,13 @@ Application::Application(int width, int height)
     // glfwSwapInterval(false);
 }
 
-GLFWwindow* Application::getWindow() const {
-    return window;
-}
+GLFWwindow* Application::getWindow() const { return window; }
 
-void Application::exit() {
-    state = stateExit;
-}
+void Application::exit() { state = stateExit; }
 
-float Application::getFrameDeltaTime() const {
-    return deltaTime;
-}
+float Application::getFrameDeltaTime() const { return deltaTime; }
 
-float Application::getTime() const {
-    return time;
-}
+float Application::getTime() const { return time; }
 
 void Application::run() {
     state = stateRun;
@@ -149,22 +141,29 @@ void Application::detectWindowDimensionChange() {
     }
 }
 
-void Application::loop() {
-    cout << "[INFO] : loop" << endl;
-}
+void Application::loop() { cout << "[INFO] : loop" << endl; }
 
-int Application::getWidth() {
+#ifdef __APPLE__
+int Application::getFramebufferWidth() {
+    int width, _;
+    glfwGetFramebufferSize(getWindow(), &width, &_);
     return width;
 }
 
-int Application::getHeight() {
+int Application::getFramebufferHeight() {
+    int _, height;
+    glfwGetFramebufferSize(getWindow(), &_, &height);
     return height;
 }
+int Application::getWindowWidth() { return width; }
 
-float Application::getWindowRatio() {
-    return float(width) / float(height);
-}
+int Application::getWindowHeight() { return height; }
+#else
+int Application::getWidth() { return width; }
 
-bool Application::windowDimensionChanged() {
-    return dimensionChanged;
-}
+int Application::getHeight() { return height; }
+#endif
+
+float Application::getWindowRatio() { return float(width) / float(height); }
+
+bool Application::windowDimensionChanged() { return dimensionChanged; }

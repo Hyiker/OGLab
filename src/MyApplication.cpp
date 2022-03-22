@@ -33,8 +33,8 @@ static void mouseCallback(GLFWwindow* window, double xposIn, double yposIn) {
     float ypos = static_cast<float>(yposIn);
     MyApplication* myapp =
         static_cast<MyApplication*>(glfwGetWindowUserPointer(window));
-    static float lastX = myapp->getWidth() / 2.0;
-    static float lastY = myapp->getHeight() / 2.0;
+    static float lastX = myapp->getWindowWidth() / 2.0;
+    static float lastY = myapp->getWindowHeight() / 2.0;
 
     if (firstMouse) {
         lastX = xpos;
@@ -63,20 +63,26 @@ MyApplication::MyApplication(const string& path, int width, int height)
       cam(vec3(-34, 92, -2), glm::vec3(0.0f, 1.0f, 0.0f), -2.2, -25) {
     m_scene.scale(vec3(0.1));
     glEnable(GL_DEPTH_TEST);
-    m_rb1.init(GL_DEPTH_ATTACHMENT, getWidth(), getHeight());
+    glCheckError(__FILE__, __LINE__);
+    m_rb1.init(GL_DEPTH24_STENCIL8, getFramebufferWidth(),
+               getFramebufferHeight());
     m_fb1_tex.init();
-    m_fb1_tex.setup(getWidth(), getHeight(), GL_RGB16, GL_FLOAT, 0);
+    m_fb1_tex.setup(getFramebufferWidth(), getFramebufferHeight(), GL_RGB,
+                    GL_UNSIGNED_BYTE, 0);
+    m_fb1_tex.setSizeFilter(GL_LINEAR, GL_LINEAR);
 
     m_fb1.init();
     m_fb1.attachTexture(m_fb1_tex, GL_COLOR_ATTACHMENT0, 0);
-    m_fb1.attachRenderbuffer(m_rb1, GL_DEPTH_ATTACHMENT);
+    m_fb1.attachRenderbuffer(m_rb1, GL_DEPTH_STENCIL_ATTACHMENT);
+    glCheckError(__FILE__, __LINE__);
 
     glfwSetWindowUserPointer(getWindow(), this);
     glfwSetCursorPosCallback(getWindow(), mouseCallback);
 }
 void MyApplication::gui() {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(float(getWidth()) / 3.0, getHeight()));
+    ImGui::SetNextWindowSize(
+        ImVec2(float(getWindowWidth()) / 3.0, getWindowHeight()));
     ImGui::Begin("Debug Panel");
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -112,20 +118,34 @@ void MyApplication::loop() {
         exit();
     }
     processInput();
-
+    m_fb1.bind();
+    // glViewport(0, 0, getFramebufferWidth(), getFramebufferHeight());
     glClearColor(0.53, 0.81, 0.92, 1);
-
+    glEnable(GL_DEPTH_TEST);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     sp.use();
     sp.setUniform("model", m_scene.getModelMatrix());
     sp.setUniform("view", cam.getViewMatrix());
     sp.setUniform("normalTransform",
                   glm::transpose(glm::inverse(m_scene.getModelMatrix())));
-    sp.setUniform("projection",
-                  perspective(45.f, float(getWidth()) / float(getHeight()),
-                              0.01f, 500.0f));
+    sp.setUniform("projection", perspective(45.f,
+                                            float(getFramebufferWidth()) /
+                                                float(getFramebufferHeight()),
+                                            0.01f, 500.0f));
     sp.setUniform("sunPosition", m_sun_position);
     m_scene.draw(sp);
+    m_fb1.unbind();
+
+    glViewport(0, 0, getFramebufferWidth(), getFramebufferHeight());
+    glCheckError(__FILE__, __LINE__);
+
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    m_finalsp.use();
+    m_finalsp.setTexture("screenTexture", 0, m_fb1_tex.getId(), GL_TEXTURE_2D);
+    m_screenquad.draw();
+
     glCheckError(__FILE__, __LINE__);
     gui();
 

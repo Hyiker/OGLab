@@ -42,9 +42,16 @@ class Application {
     void run();
 
     // Application informations
-    //
+#ifdef __APPLE__
+    int getFramebufferWidth();
+    int getFramebufferHeight();
+    int getWindowWidth();
+    int getWindowHeight();
+#else
     int getWidth();
     int getHeight();
+#endif
+
     float getWindowRatio();
     bool windowDimensionChanged();
 
@@ -57,9 +64,7 @@ class Application {
 
     State state;
 
-    Application& operator=(const Application&) {
-        return *this;
-    }
+    Application& operator=(const Application&) { return *this; }
 
     GLFWwindow* window;
 
