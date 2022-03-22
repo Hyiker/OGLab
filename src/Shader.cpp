@@ -202,6 +202,15 @@ void ShaderProgram::setUniform(const std::string& name, int val) {
     glUniform1i(uniform(name), val);
 }
 
+void ShaderProgram::setTexture(const std::string& name, int index, int texId,
+                               GLenum texType) {
+    glActiveTexture(GL_TEXTURE0 + index);
+    glUniform1i(uniform(name), index);
+    glBindTexture(texType, texId);
+
+    glActiveTexture(GL_TEXTURE0);
+}
+
 ShaderProgram::~ShaderProgram() {
     // glDeleteProgram(handle);
 }

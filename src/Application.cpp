@@ -61,12 +61,6 @@ Application::Application(int width, int height)
         throw std::runtime_error("Fail to initialize GLAD");
     }
 
-    // get version info
-    const GLubyte* renderer = glGetString(GL_RENDERER);
-    const GLubyte* version = glGetString(GL_VERSION);
-    cout << "Renderer: " << renderer << endl;
-    cout << "OpenGL version supported " << version << endl;
-
     // ImGui setup
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();

@@ -8,6 +8,7 @@ add_executable(opengl-cmake-skeleton
   lib/imgui/backends/imgui_impl_glfw.cpp
   lib/imgui/backends/imgui_impl_opengl3.cpp
   src/tiny_obj_loader.h
+  src/stb_image.h
   src/Application.cpp
   src/Application.cpp
   src/MyApplication.cpp

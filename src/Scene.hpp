@@ -5,20 +5,55 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <memory>
+#include <string>
 #include <vector>
+
+#include "Shader.hpp"
+
 struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec2 texCoord;
+    bool operator==(const Vertex& v) const;
+};
+namespace std {
+template <>
+struct hash<Vertex> {
+    size_t operator()(Vertex const& v) const;
+};
+}  // namespace std
+
+struct Texture {
+    GLuint id;
+    std::string texName;
+    GLenum format;
+    void setup(unsigned char* data, int width, int height);
+};
+struct Material {
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+
+    float shininess;
+    float ior;
+    int illum;
+
+    std::shared_ptr<Texture> ambientTex;
+    std::shared_ptr<Texture> diffuseTex;
+    std::shared_ptr<Texture> displacementTex;
+    std::shared_ptr<Texture> specularTex;
+    std::shared_ptr<Texture> alphaTex;
 };
 struct Mesh {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
+    Material material;
 
     GLuint vao, vbo, ebo;
     void prepare();
-
-    void draw();
+    size_t countVertex() const;
+    void draw(ShaderProgram& sp);
 };
 class Scene {
     std::vector<Mesh> m_meshes;
@@ -28,7 +63,9 @@ class Scene {
     void scale(glm::vec3 ratio);
     void translate(glm::vec3 pos);
     glm::mat4 getModelMatrix() const;
-    void draw();
+    size_t countMesh() const;
+    size_t countVertex() const;
+    void draw(ShaderProgram& sp);
     Scene(const std::string& path);
 };
 

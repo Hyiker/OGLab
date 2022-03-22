@@ -4,12 +4,26 @@
 
 #include <filesystem>
 #include <glm/gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+
+#include <glm/gtx/hash.hpp>
 #include <iostream>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #define TINYOBJLOADER_IMPLEMENTATION
+#include <unordered_map>
+
 #include "tiny_obj_loader.h"
 
 using namespace std;
+
 using namespace tinyobj;
+size_t hash<Vertex>::operator()(Vertex const& v) const {
+    return ((hash<glm::vec3>()(v.position) ^
+             (hash<glm::vec3>()(v.normal) << 1)) >>
+            1) ^
+           (hash<glm::vec2>()(v.texCoord) << 1);
+}
 namespace fs = std::filesystem;
 void Mesh::prepare() {
     glGenVertexArrays(1, &vao);
@@ -41,8 +55,30 @@ void Mesh::prepare() {
     glBindVertexArray(0);
 }
 
-void Mesh::draw() {
+size_t Mesh::countVertex() const {
+    return vertices.size();
+}
+
+void Mesh::draw(ShaderProgram& sp) {
     glBindVertexArray(vao);
+
+    sp.setUniform("material.ambient", material.ambient);
+    sp.setUniform("material.diffuse", material.diffuse);
+    sp.setUniform("material.specular", material.specular);
+    sp.setUniform("material.shininess", material.shininess);
+    sp.setUniform("material.ior", material.ior);
+    sp.setUniform("material.illum", material.illum);
+
+    if (material.ambientTex)
+        sp.setTexture("material.ambientTex", 0, material.ambientTex->id);
+    if (material.diffuseTex)
+        sp.setTexture("material.diffuseTex", 1, material.diffuseTex->id);
+    if (material.specularTex)
+        sp.setTexture("material.specularTex", 2, material.specularTex->id);
+    if (material.displacementTex)
+        sp.setTexture("material.displacementTex", 3,
+                      material.displacementTex->id);
+
     glDrawElements(GL_TRIANGLES, static_cast<GLuint>(indices.size()),
                    GL_UNSIGNED_INT, 0);
 
@@ -61,17 +97,65 @@ glm::mat4 Scene::getModelMatrix() const {
     return m_modelmat;
 }
 
-void Scene::draw() {
+size_t Scene::countMesh() const {
+    return m_meshes.size();
+}
+
+size_t Scene::countVertex() const {
+    size_t cnt = 0;
+    for (const auto& mesh : m_meshes) {
+        cnt += mesh.countVertex();
+    }
+    return cnt;
+}
+
+void Scene::draw(ShaderProgram& sp) {
     for (auto& mesh : m_meshes) {
-        mesh.draw();
+        mesh.draw(sp);
     }
 }
 
-vector<Mesh> readObject(const std::string& path) {
+static shared_ptr<Texture> loadTexture(
+    unordered_map<string, shared_ptr<Texture>>& uniqueTexture, string parentDir,
+    string texName) {
+    if (texName.length() == 0) return nullptr;
+    if (uniqueTexture.count(texName)) return uniqueTexture[texName];
+    shared_ptr<Texture> tex = make_shared<Texture>();
+
+    int ncomp;
+    int width, height;
+    tex->texName = texName;
+    string path = (parentDir + '/' + texName);
+    unsigned char* data = stbi_load(path.c_str(), &width, &height, &ncomp, 0);
+    if (!data) {
+        throw runtime_error("Failed to read texture " + path);
+    }
+    switch (ncomp) {
+        case 1:
+            tex->format = GL_RED;
+            break;
+        case 3:
+            tex->format = GL_RGB;
+            break;
+        case 4:
+            tex->format = GL_RGBA;
+            break;
+        default:
+            throw runtime_error("Unsupported tex format " + to_string(ncomp));
+            break;
+    }
+    tex->setup(data, width, height);
+    stbi_image_free(data);
+    uniqueTexture[tex->texName] = tex;
+    return tex;
+}
+
+static vector<Mesh> readObject(const std::string& parentPath,
+                               const std::string& modelPath) {
     ObjReader reader;
     ObjReaderConfig config;
 
-    if (!reader.ParseFromFile(path, config)) {
+    if (!reader.ParseFromFile(modelPath, config)) {
         if (!reader.Error().empty()) {
             throw runtime_error("TinyObjReader: " + reader.Error());
         }
@@ -86,12 +170,36 @@ vector<Mesh> readObject(const std::string& path) {
     auto& materials = reader.GetMaterials();
     vector<Mesh> meshes;
 
+    unordered_map<string, std::shared_ptr<Texture>> uniqueTexture;
+    unordered_map<Vertex, unsigned int> uniqueVertices;
     for (auto& shape : shapes) {
         Mesh mesh;
-        for (auto& idx : shape.mesh.indices) {
-            Vertex vertex;
-            // access to vertex
+        Material material;
+        // one material for one mesh
+        if (shape.mesh.material_ids.size()) {
+            auto& mat = materials[shape.mesh.material_ids[0]];
+            for (int i = 0; i < 3; i++) {
+                material.ambient[i] = mat.ambient[i];
+                material.diffuse[i] = mat.diffuse[i];
+                material.specular[i] = mat.specular[i];
+            }
+            material.shininess = mat.shininess;
+            material.ior = mat.ior;
+            material.illum = mat.illum;
 
+            material.ambientTex =
+                loadTexture(uniqueTexture, parentPath, mat.ambient_texname);
+            material.diffuseTex =
+                loadTexture(uniqueTexture, parentPath, mat.diffuse_texname);
+            material.specularTex =
+                loadTexture(uniqueTexture, parentPath, mat.specular_texname);
+            material.displacementTex = loadTexture(uniqueTexture, parentPath,
+                                                   mat.displacement_texname);
+        }
+        for (int i = 0; i < shape.mesh.indices.size(); i++) {
+            Vertex vertex;
+            auto& idx = shape.mesh.indices[i];
+            // access to vertex
             vertex.position.x =
                 attrib.vertices[3 * size_t(idx.vertex_index) + 0];
             vertex.position.y =
@@ -118,20 +226,45 @@ vector<Mesh> readObject(const std::string& path) {
                 vertex.texCoord.y =
                     attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
             }
-            mesh.vertices.push_back(move(vertex));
-            mesh.indices.push_back(mesh.indices.size());
+            if (!uniqueVertices.count(vertex)) {
+                uniqueVertices[vertex] = mesh.vertices.size();
+                mesh.vertices.push_back(move(vertex));
+            }
+            mesh.indices.push_back(uniqueVertices[vertex]);
         }
+        mesh.material = move(material);
         meshes.push_back(mesh);
     }
     return meshes;
 }
 Scene::Scene(const std::string& path) {
-    string abspath = fs::absolute(path);
+    fs::path abspath = fs::absolute(path);
     cout << "loading model from " << abspath << '\n';
-    m_meshes = readObject(path);
+    stbi_set_flip_vertically_on_load(true);
+    m_meshes = readObject(abspath.parent_path(), abspath);
 
     // prepare mesh vao ebo
     for (auto& mesh : m_meshes) {
         mesh.prepare();
     }
+}
+
+bool Vertex::operator==(const Vertex& v) const {
+    return position == v.position && normal == v.normal &&
+           texCoord == v.texCoord;
+}
+
+void Texture::setup(unsigned char* data, int width, int height) {
+    glGenTextures(1, &id);
+
+    glBindTexture(GL_TEXTURE_2D, this->id);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format,
+                 GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                    GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }

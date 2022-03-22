@@ -54,8 +54,11 @@ MyApplication::MyApplication(const string& path, int width, int height)
       cam(vec3(-45, 38, -3), glm::vec3(0.0f, 1.0f, 0.0f), -2.2, -25) {
     scene.scale(vec3(0.05));
     glEnable(GL_DEPTH_TEST);
+
     glfwSetWindowUserPointer(getWindow(), this);
     glfwSetCursorPosCallback(getWindow(), mouseCallback);
+
+    glfwSetInputMode(getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void MyApplication::processInput() {
@@ -81,6 +84,16 @@ void MyApplication::loop() {
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                     1000.0f / ImGui::GetIO().Framerate,
                     ImGui::GetIO().Framerate);
+
+        // get version info
+        const GLubyte* renderer = glGetString(GL_RENDERER);
+        const GLubyte* version = glGetString(GL_VERSION);
+        ImGui::Text("Renderer: %s", renderer);
+        ImGui::Text("OpenGL Version: %s", version);
+
+        ImGui::Separator();
+        ImGui::Text("Meshes: %lu, Vertices: %lu", scene.countMesh(),
+                    scene.countVertex());
         ImGui::Text("Camera Position: (%.1f, %.1f, %.1f)", cam.position.x,
                     cam.position.y, cam.position.z);
         ImGui::Text("Camera Pitch: %.1f, Yaw: %.1f", cam.pitch, cam.yaw);
@@ -98,8 +111,8 @@ void MyApplication::loop() {
                   glm::transpose(glm::inverse(scene.getModelMatrix())));
     sp.setUniform("projection",
                   perspective(45.f, float(getWidth()) / float(getHeight()),
-                              0.01f, 1000.0f));
-    scene.draw();
+                              0.01f, 500.0f));
+    scene.draw(sp);
     glCheckError(__FILE__, __LINE__);
 
     glBindVertexArray(0);

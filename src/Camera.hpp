@@ -35,7 +35,7 @@ class Camera {
           yaw(yaw),
           pitch(pitch),
           speed(25.0f),
-          sensitivity(0.5f) {
+          sensitivity(0.2f) {
         updateCameraVectors();
     }
 
