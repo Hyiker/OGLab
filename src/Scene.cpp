@@ -70,14 +70,17 @@ void Mesh::draw(ShaderProgram& sp) {
     sp.setUniform("material.illum", material.illum);
 
     if (material.ambientTex)
-        sp.setTexture("material.ambientTex", 0, material.ambientTex->id);
+        sp.setTexture("material.ambientTex", 0, material.ambientTex->getId());
     if (material.diffuseTex)
-        sp.setTexture("material.diffuseTex", 1, material.diffuseTex->id);
+        sp.setTexture("material.diffuseTex", 1, material.diffuseTex->getId());
     if (material.specularTex)
-        sp.setTexture("material.specularTex", 2, material.specularTex->id);
+        sp.setTexture("material.specularTex", 2, material.specularTex->getId());
     if (material.displacementTex)
         sp.setTexture("material.displacementTex", 3,
-                      material.displacementTex->id);
+                      material.displacementTex->getId());
+    ;
+    if (material.normalTex)
+        sp.setTexture("material.normalTex", 4, material.normalTex->getId());
 
     glDrawElements(GL_TRIANGLES, static_cast<GLuint>(indices.size()),
                    GL_UNSIGNED_INT, 0);
@@ -124,29 +127,29 @@ static shared_ptr<Texture> loadTexture(
 
     int ncomp;
     int width, height;
-    tex->texName = texName;
     string path = (parentDir + '/' + texName);
     unsigned char* data = stbi_load(path.c_str(), &width, &height, &ncomp, 0);
     if (!data) {
         throw runtime_error("Failed to read texture " + path);
     }
+    GLenum format;
     switch (ncomp) {
         case 1:
-            tex->format = GL_RED;
+            format = GL_RED;
             break;
         case 3:
-            tex->format = GL_RGB;
+            format = GL_RGB;
             break;
         case 4:
-            tex->format = GL_RGBA;
+            format = GL_RGBA;
             break;
         default:
             throw runtime_error("Unsupported tex format " + to_string(ncomp));
             break;
     }
-    tex->setup(data, width, height);
+    tex->setup(data, width, height, format);
     stbi_image_free(data);
-    uniqueTexture[tex->texName] = tex;
+    uniqueTexture[texName] = tex;
     return tex;
 }
 
@@ -195,6 +198,8 @@ static vector<Mesh> readObject(const std::string& parentPath,
                 loadTexture(uniqueTexture, parentPath, mat.specular_texname);
             material.displacementTex = loadTexture(uniqueTexture, parentPath,
                                                    mat.displacement_texname);
+            material.normalTex =
+                loadTexture(uniqueTexture, parentPath, mat.normal_texname);
         }
         for (int i = 0; i < shape.mesh.indices.size(); i++) {
             Vertex vertex;
@@ -252,19 +257,4 @@ Scene::Scene(const std::string& path) {
 bool Vertex::operator==(const Vertex& v) const {
     return position == v.position && normal == v.normal &&
            texCoord == v.texCoord;
-}
-
-void Texture::setup(unsigned char* data, int width, int height) {
-    glGenTextures(1, &id);
-
-    glBindTexture(GL_TEXTURE_2D, this->id);
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format,
-                 GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                    GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }

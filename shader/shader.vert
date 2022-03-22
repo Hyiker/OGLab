@@ -9,15 +9,15 @@ uniform mat4 view;
 uniform mat4 model;
 uniform mat4 normalTransform;
 
-out vec4 position;
+out vec3 position;
 out vec3 normal;
 out vec2 texCoord;
 
 void main(void) {
-    position = view * model * vec4(aPosition, 1.0);
+    position = (model * vec4(aPosition, 1.0)).xyz;
 
     normal = vec3(normalTransform * vec4(aNormal, 0.0));
     texCoord = aTexCoord;
 
-    gl_Position = projection * position;
+    gl_Position = projection * view * vec4(position, 1.0);
 }

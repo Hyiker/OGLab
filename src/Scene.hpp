@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "Shader.hpp"
+#include "Texture.hpp"
 
 struct Vertex {
     glm::vec3 position;
@@ -24,12 +25,6 @@ struct hash<Vertex> {
 };
 }  // namespace std
 
-struct Texture {
-    GLuint id;
-    std::string texName;
-    GLenum format;
-    void setup(unsigned char* data, int width, int height);
-};
 struct Material {
     glm::vec3 ambient;
     glm::vec3 diffuse;
@@ -42,6 +37,7 @@ struct Material {
     std::shared_ptr<Texture> ambientTex;
     std::shared_ptr<Texture> diffuseTex;
     std::shared_ptr<Texture> displacementTex;
+    std::shared_ptr<Texture> normalTex;
     std::shared_ptr<Texture> specularTex;
     std::shared_ptr<Texture> alphaTex;
 };

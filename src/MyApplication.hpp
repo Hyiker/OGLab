@@ -17,16 +17,18 @@
 #include "Shader.hpp"
 
 class MyApplication : public Application {
-    Scene scene;
+    Scene m_scene;
     Shader vs;
     Shader fs;
     ShaderProgram sp;
+    glm::vec3 m_sun_position;
 
    public:
     MyApplication(const std::string& path, int width = 640, int height = 480);
     Camera cam;
 
    protected:
+    void gui();
     virtual void loop();
 
    private:
