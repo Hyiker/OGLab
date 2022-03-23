@@ -7,7 +7,7 @@ class Quad {
 
    public:
     Quad();
-    void draw();
+    void draw() const;
     ~Quad();
 };
 

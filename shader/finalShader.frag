@@ -1,7 +1,7 @@
 #version 330 core
 out vec4 FragColor;
 
-in vec2 TexCoords;
+in vec2 texCoord;
 
 uniform sampler2D screenTexture;
 
@@ -37,7 +37,7 @@ vec3 Uncharted2ToneMapping(vec3 color, float adaptedLum) {
     return F(1.6 * adaptedLum * color) / F(vec3(WHITE));
 }
 void main() {
-    vec3 color = texture(screenTexture, TexCoords).rgb;
+    vec3 color = texture(screenTexture, texCoord).rgb;
 
     color = Uncharted2ToneMapping(color, 1.0);
 

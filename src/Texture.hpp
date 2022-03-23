@@ -12,6 +12,7 @@ class Texture {
     void bind() const { glBindTexture(GL_TEXTURE_2D, m_id); }
     void unbind() const { glBindTexture(GL_TEXTURE_2D, 0); }
     GLuint getId() const { return m_id; };
+    GLenum getType() const { return GL_TEXTURE_2D; }
     int getMipmapLevels() const {
         unsigned int lvl = 0;
         int width = this->width, height = this->height;

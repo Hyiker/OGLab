@@ -46,11 +46,11 @@ void GBuffer::render(const Scene& scene, const Camera& cam) {
 
     m_shader.use();
 
-    m_shader.setUniform("model", scene.getModelMatrix());
-    m_shader.setUniform("view", cam.getViewMatrix());
-    m_shader.setUniform("normalTransform",
+    m_shader.setUniform("uModel", scene.getModelMatrix());
+    m_shader.setUniform("uView", cam.getViewMatrix());
+    m_shader.setUniform("uNormalTransform",
                         glm::transpose(glm::inverse(scene.getModelMatrix())));
-    m_shader.setUniform("projection", cam.getProjectionMatrix());
+    m_shader.setUniform("uProjection", cam.getProjectionMatrix());
     glCheckError(__FILE__, __LINE__);
     scene.draw(m_shader);
     glCheckError(__FILE__, __LINE__);

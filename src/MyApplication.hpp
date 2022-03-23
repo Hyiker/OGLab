@@ -15,6 +15,7 @@
 
 #include "Application.hpp"
 #include "Camera.hpp"
+#include "DeferredRender.hpp"
 #include "Framebuffer.hpp"
 #include "GBuffer.hpp"
 #include "Quad.hpp"
@@ -26,8 +27,9 @@ class MyApplication : public Application {
     glm::vec3 m_sun_position;
 
     GBuffer m_gbuffer;
+    DeferredRender m_defrender;
 
-    Quad m_screenquad;
+    Quad m_quad;
     Camera m_cam;
 
    public:
@@ -39,7 +41,8 @@ class MyApplication : public Application {
     virtual void loop();
 
    private:
-    void processInput();
+    void cameraMove();
+    void sunMove();
 };
 
 #endif /* MYAPPLICATION_H */

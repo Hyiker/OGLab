@@ -55,10 +55,15 @@ MyApplication::MyApplication(const string& path, int width, int height)
       m_scene(path),
       m_finalsp({{SHADER_DIR "/finalShader.vert", GL_VERTEX_SHADER},
                  {SHADER_DIR "/finalShader.frag", GL_FRAGMENT_SHADER}}),
-      m_sun_position(-53, 159, 2),
+      m_sun_position(0, 10, 0),
       m_gbuffer{
           ShaderProgram({{SHADER_DIR "/shader.vert", GL_VERTEX_SHADER},
                          {SHADER_DIR "/gShader.frag", GL_FRAGMENT_SHADER}}),
+          getFramebufferWidth(), getFramebufferHeight()},
+      m_defrender{
+          ShaderProgram(
+              {{SHADER_DIR "/finalShader.vert", GL_VERTEX_SHADER},
+               {SHADER_DIR "/deferredShader.frag", GL_FRAGMENT_SHADER}}),
           getFramebufferWidth(), getFramebufferHeight()},
       m_cam(vec3(21, 74, -2), glm::vec3(0.0f, 1.0f, 0.0f), -2.2, -25) {
     m_scene.scale(vec3(0.1));
@@ -66,6 +71,8 @@ MyApplication::MyApplication(const string& path, int width, int height)
     glEnable(GL_DEPTH_TEST);
     glCheckError(__FILE__, __LINE__);
     m_gbuffer.init();
+    glCheckError(__FILE__, __LINE__);
+    m_defrender.init();
     glCheckError(__FILE__, __LINE__);
 
     glfwSetWindowUserPointer(getWindow(), this);
@@ -91,10 +98,12 @@ void MyApplication::gui() {
     ImGui::Text("Camera Position: (%.1f, %.1f, %.1f)", m_cam.position.x,
                 m_cam.position.y, m_cam.position.z);
     ImGui::Text("Camera Pitch: %.1f, Yaw: %.1f", m_cam.pitch, m_cam.yaw);
+    ImGui::Text("Sun Position: (%.1f, %.1f, %.1f)", m_sun_position.x,
+                m_sun_position.y, m_sun_position.z);
 
     ImGui::End();
 }
-void MyApplication::processInput() {
+void MyApplication::cameraMove() {
     if (glfwGetKey(getWindow(), GLFW_KEY_W) == GLFW_PRESS)
         m_cam.processKeyboard(CameraMovement::FORWARD, getFrameDeltaTime());
     if (glfwGetKey(getWindow(), GLFW_KEY_S) == GLFW_PRESS)
@@ -103,28 +112,42 @@ void MyApplication::processInput() {
         m_cam.processKeyboard(CameraMovement::LEFT, getFrameDeltaTime());
     if (glfwGetKey(getWindow(), GLFW_KEY_D) == GLFW_PRESS)
         m_cam.processKeyboard(CameraMovement::RIGHT, getFrameDeltaTime());
-    if (glfwGetKey(getWindow(), GLFW_KEY_ESCAPE) == GLFW_PRESS) exit();
+}
+
+void MyApplication::sunMove() {
+    if (glfwGetKey(getWindow(), GLFW_KEY_UP) == GLFW_PRESS)
+        m_sun_position.x += 10.0 * getFrameDeltaTime();
+    if (glfwGetKey(getWindow(), GLFW_KEY_DOWN) == GLFW_PRESS)
+        m_sun_position.x -= 10.0 * getFrameDeltaTime();
+
+    if (glfwGetKey(getWindow(), GLFW_KEY_LEFT) == GLFW_PRESS)
+        m_sun_position.z += 10.0 * getFrameDeltaTime();
+
+    if (glfwGetKey(getWindow(), GLFW_KEY_RIGHT) == GLFW_PRESS)
+        m_sun_position.z -= 10.0 * getFrameDeltaTime();
 }
 void MyApplication::loop() {
-    if (glfwWindowShouldClose(getWindow())) {
+    if (glfwWindowShouldClose(getWindow()) ||
+        glfwGetKey(getWindow(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
         exit();
-    }
-    processInput();
+
+    cameraMove();
+    sunMove();
     glClearColor(0.53, 0.81, 0.92, 1);
     glEnable(GL_DEPTH_TEST);
     glClear(GL_DEPTH_BUFFER_BIT);
     m_gbuffer.render(m_scene, m_cam);
 
-    glViewport(0, 0, getFramebufferWidth(), getFramebufferHeight());
     glCheckError(__FILE__, __LINE__);
+
+    m_defrender.render(m_quad, m_gbuffer, m_cam, m_sun_position);
 
     glClearColor(0, 0, 0, 1);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
     m_finalsp.use();
-    m_finalsp.setTexture("screenTexture", 0, m_gbuffer.getNormal(),
-                         GL_TEXTURE_2D);
-    m_screenquad.draw();
+    m_finalsp.setTexture("screenTexture", 0, m_defrender.getTexture());
+    m_quad.draw();
 
     glCheckError(__FILE__, __LINE__);
     gui();

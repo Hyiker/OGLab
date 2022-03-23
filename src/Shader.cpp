@@ -217,8 +217,8 @@ void ShaderProgram::setTexture(const std::string& name, int index, int texId,
 }
 
 void ShaderProgram::setTexture(const std::string& name, int index,
-                               const Texture& tex, GLenum texType) {
-    setTexture(name, index, tex.getId(), texType);
+                               const Texture& tex) {
+    setTexture(name, index, tex.getId(), tex.getType());
 }
 
 ShaderProgram::~ShaderProgram() {

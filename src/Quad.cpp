@@ -21,7 +21,7 @@ Quad::Quad() {
     glBindVertexArray(0);
 }
 
-void Quad::draw() {
+void Quad::draw() const {
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);

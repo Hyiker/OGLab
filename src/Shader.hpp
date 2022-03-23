@@ -84,8 +84,7 @@ class ShaderProgram {
 
     void setTexture(const std::string& name, int index, int texId,
                     GLenum texType = GL_TEXTURE_2D);
-    void setTexture(const std::string& name, int index, const Texture& tex,
-                    GLenum texType = GL_TEXTURE_2D);
+    void setTexture(const std::string& name, int index, const Texture& tex);
 
     ~ShaderProgram();
 

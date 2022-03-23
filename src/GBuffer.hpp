@@ -18,6 +18,7 @@ class GBuffer {
           m_height{height} {}
     void init();
     void render(const Scene& scene, const Camera& cam);
+    const Texture& getDepth() const { return m_depth; }
     const Texture& getPosition() const { return m_position; }
     const Texture& getNormal() const { return m_normal; }
     const Texture& getAlbedo() const { return m_albedo; }

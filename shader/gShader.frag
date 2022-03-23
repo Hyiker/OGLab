@@ -8,6 +8,9 @@ in vec3 normal;
 in vec2 texCoord;
 
 struct Material {
+    vec3 diffuse;
+    vec3 specular;
+
     sampler2D diffuseTex;
     sampler2D specularTex;
 };
@@ -17,6 +20,7 @@ uniform Material material;
 void main() {
     gPosition = position;
     gNormal = normalize(normal);
-    gAlbedoSpec.rgb = texture(material.diffuseTex, texCoord).rgb;
+    gAlbedoSpec.rgb =
+        material.diffuse * texture(material.diffuseTex, texCoord).rgb;
     gAlbedoSpec.a = texture(material.specularTex, texCoord).r;
 }
