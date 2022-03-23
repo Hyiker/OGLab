@@ -11,6 +11,7 @@
 #define GLM_FORCE_RADIANS
 #include <glad/glad.h>
 
+#include <Texture.hpp>
 #include <glm/glm.hpp>
 #include <initializer_list>
 #include <map>
@@ -82,6 +83,8 @@ class ShaderProgram {
     void setUniform(const std::string& name, int val);
 
     void setTexture(const std::string& name, int index, int texId,
+                    GLenum texType = GL_TEXTURE_2D);
+    void setTexture(const std::string& name, int index, const Texture& tex,
                     GLenum texType = GL_TEXTURE_2D);
 
     ~ShaderProgram();

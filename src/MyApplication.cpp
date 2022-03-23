@@ -47,32 +47,25 @@ static void mouseCallback(GLFWwindow* window, double xposIn, double yposIn) {
 
     lastX = xpos;
     lastY = ypos;
-    myapp->cam.processMouseMovement(xoffset, yoffset);
+    myapp->getCamera().processMouseMovement(xoffset, yoffset);
 }
 
 MyApplication::MyApplication(const string& path, int width, int height)
     : Application(width, height),
       m_scene(path),
-      sp({{SHADER_DIR "/shader.vert", GL_VERTEX_SHADER},
-          {SHADER_DIR "/shader.frag", GL_FRAGMENT_SHADER}}),
       m_finalsp({{SHADER_DIR "/finalShader.vert", GL_VERTEX_SHADER},
                  {SHADER_DIR "/finalShader.frag", GL_FRAGMENT_SHADER}}),
       m_sun_position(-53, 159, 2),
-      cam(vec3(21, 74, -2), glm::vec3(0.0f, 1.0f, 0.0f), -2.2, -25) {
+      m_gbuffer{
+          ShaderProgram({{SHADER_DIR "/shader.vert", GL_VERTEX_SHADER},
+                         {SHADER_DIR "/gShader.frag", GL_FRAGMENT_SHADER}}),
+          getFramebufferWidth(), getFramebufferHeight()},
+      m_cam(vec3(21, 74, -2), glm::vec3(0.0f, 1.0f, 0.0f), -2.2, -25) {
     m_scene.scale(vec3(0.1));
 
     glEnable(GL_DEPTH_TEST);
     glCheckError(__FILE__, __LINE__);
-    m_rb1.init(GL_DEPTH24_STENCIL8, getFramebufferWidth(),
-               getFramebufferHeight());
-    m_fb1_tex.init();
-    m_fb1_tex.setup(getFramebufferWidth(), getFramebufferHeight(), GL_RGB16F,
-                    GL_RGB, GL_FLOAT, 0);
-    m_fb1_tex.setSizeFilter(GL_LINEAR, GL_LINEAR);
-
-    m_fb1.init();
-    m_fb1.attachTexture(m_fb1_tex, GL_COLOR_ATTACHMENT0, 0);
-    m_fb1.attachRenderbuffer(m_rb1, GL_DEPTH_STENCIL_ATTACHMENT);
+    m_gbuffer.init();
     glCheckError(__FILE__, __LINE__);
 
     glfwSetWindowUserPointer(getWindow(), this);
@@ -95,21 +88,21 @@ void MyApplication::gui() {
     ImGui::Separator();
     ImGui::Text("Meshes: %lu, Vertices: %lu", m_scene.countMesh(),
                 m_scene.countVertex());
-    ImGui::Text("Camera Position: (%.1f, %.1f, %.1f)", cam.position.x,
-                cam.position.y, cam.position.z);
-    ImGui::Text("Camera Pitch: %.1f, Yaw: %.1f", cam.pitch, cam.yaw);
+    ImGui::Text("Camera Position: (%.1f, %.1f, %.1f)", m_cam.position.x,
+                m_cam.position.y, m_cam.position.z);
+    ImGui::Text("Camera Pitch: %.1f, Yaw: %.1f", m_cam.pitch, m_cam.yaw);
 
     ImGui::End();
 }
 void MyApplication::processInput() {
     if (glfwGetKey(getWindow(), GLFW_KEY_W) == GLFW_PRESS)
-        cam.processKeyboard(CameraMovement::FORWARD, getFrameDeltaTime());
+        m_cam.processKeyboard(CameraMovement::FORWARD, getFrameDeltaTime());
     if (glfwGetKey(getWindow(), GLFW_KEY_S) == GLFW_PRESS)
-        cam.processKeyboard(CameraMovement::BACKWARD, getFrameDeltaTime());
+        m_cam.processKeyboard(CameraMovement::BACKWARD, getFrameDeltaTime());
     if (glfwGetKey(getWindow(), GLFW_KEY_A) == GLFW_PRESS)
-        cam.processKeyboard(CameraMovement::LEFT, getFrameDeltaTime());
+        m_cam.processKeyboard(CameraMovement::LEFT, getFrameDeltaTime());
     if (glfwGetKey(getWindow(), GLFW_KEY_D) == GLFW_PRESS)
-        cam.processKeyboard(CameraMovement::RIGHT, getFrameDeltaTime());
+        m_cam.processKeyboard(CameraMovement::RIGHT, getFrameDeltaTime());
     if (glfwGetKey(getWindow(), GLFW_KEY_ESCAPE) == GLFW_PRESS) exit();
 }
 void MyApplication::loop() {
@@ -117,23 +110,10 @@ void MyApplication::loop() {
         exit();
     }
     processInput();
-    m_fb1.bind();
     glClearColor(0.53, 0.81, 0.92, 1);
     glEnable(GL_DEPTH_TEST);
-    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    sp.use();
-    sp.setUniform("model", m_scene.getModelMatrix());
-    sp.setUniform("view", cam.getViewMatrix());
-    sp.setUniform("normalTransform",
-                  glm::transpose(glm::inverse(m_scene.getModelMatrix())));
-    sp.setUniform("projection", perspective(45.f,
-                                            float(getFramebufferWidth()) /
-                                                float(getFramebufferHeight()),
-                                            1.f, 500.0f));
-    sp.setUniform("sunPosition", m_sun_position);
-    sp.setUniform("camPosition", cam.getPosition());
-    m_scene.draw(sp);
-    m_fb1.unbind();
+    glClear(GL_DEPTH_BUFFER_BIT);
+    m_gbuffer.render(m_scene, m_cam);
 
     glViewport(0, 0, getFramebufferWidth(), getFramebufferHeight());
     glCheckError(__FILE__, __LINE__);
@@ -142,7 +122,8 @@ void MyApplication::loop() {
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
     m_finalsp.use();
-    m_finalsp.setTexture("screenTexture", 0, m_fb1_tex.getId(), GL_TEXTURE_2D);
+    m_finalsp.setTexture("screenTexture", 0, m_gbuffer.getNormal(),
+                         GL_TEXTURE_2D);
     m_screenquad.draw();
 
     glCheckError(__FILE__, __LINE__);

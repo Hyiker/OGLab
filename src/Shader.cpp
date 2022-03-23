@@ -216,6 +216,11 @@ void ShaderProgram::setTexture(const std::string& name, int index, int texId,
     glActiveTexture(GL_TEXTURE0);
 }
 
+void ShaderProgram::setTexture(const std::string& name, int index,
+                               const Texture& tex, GLenum texType) {
+    setTexture(name, index, tex.getId(), texType);
+}
+
 ShaderProgram::~ShaderProgram() {
     // glDeleteProgram(handle);
 }
