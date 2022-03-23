@@ -3,6 +3,15 @@
 #include <glad/glad.h>
 
 #include <string>
+inline unsigned int calcMipmapLevels(int width, int height) {
+    unsigned int lvl = 0;
+    while ((width | height) >> 1) {
+        width >>= 1;
+        height >>= 1;
+        lvl++;
+    }
+    return lvl;
+}
 class Texture {
     GLuint m_id;
 
@@ -37,19 +46,12 @@ class Texture {
         unbind();
     }
     void setup(unsigned char* data, GLsizei width, GLsizei height,
-               GLenum format) {
-        glGenTextures(1, &m_id);
+               GLenum internalformat, GLenum srcformat, GLint level) {
+        bind();
+        glTexImage2D(GL_TEXTURE_2D, level, internalformat, width, height, 0,
+                     srcformat, GL_UNSIGNED_BYTE, data);
 
-        glBindTexture(GL_TEXTURE_2D, this->m_id);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format,
-                     GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                        GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        unbind();
     }
 };
 #endif /* TEXTURE_H */

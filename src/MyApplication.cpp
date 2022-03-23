@@ -59,16 +59,17 @@ MyApplication::MyApplication(const string& path, int width, int height)
       m_finalvs(SHADER_DIR "/finalShader.vert", GL_VERTEX_SHADER),
       m_finalfs(SHADER_DIR "/finalShader.frag", GL_FRAGMENT_SHADER),
       m_finalsp({m_finalvs, m_finalfs}),
-      m_sun_position(0, 35, -2),
-      cam(vec3(-34, 92, -2), glm::vec3(0.0f, 1.0f, 0.0f), -2.2, -25) {
+      m_sun_position(-23, 116, 0),
+      cam(vec3(21, 74, -2), glm::vec3(0.0f, 1.0f, 0.0f), -2.2, -25) {
     m_scene.scale(vec3(0.1));
+
     glEnable(GL_DEPTH_TEST);
     glCheckError(__FILE__, __LINE__);
     m_rb1.init(GL_DEPTH24_STENCIL8, getFramebufferWidth(),
                getFramebufferHeight());
     m_fb1_tex.init();
-    m_fb1_tex.setup(getFramebufferWidth(), getFramebufferHeight(), GL_RGB,
-                    GL_UNSIGNED_BYTE, 0);
+    m_fb1_tex.setup(getFramebufferWidth(), getFramebufferHeight(), GL_RGB16F,
+                    GL_FLOAT, 0);
     m_fb1_tex.setSizeFilter(GL_LINEAR, GL_LINEAR);
 
     m_fb1.init();
@@ -119,7 +120,6 @@ void MyApplication::loop() {
     }
     processInput();
     m_fb1.bind();
-    // glViewport(0, 0, getFramebufferWidth(), getFramebufferHeight());
     glClearColor(0.53, 0.81, 0.92, 1);
     glEnable(GL_DEPTH_TEST);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);

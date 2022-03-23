@@ -17,6 +17,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "glError.hpp"
+
 using namespace std;
 
 Application* currentApplication = NULL;
@@ -65,6 +67,7 @@ Application::Application(int width, int height)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+    glCheckError(__FILE__, __LINE__);
 
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);

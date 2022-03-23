@@ -43,6 +43,7 @@ class Application {
 
     // Application informations
 #ifdef __APPLE__
+    // MacOS has different default window size and framebuffer size
     int getFramebufferWidth();
     int getFramebufferHeight();
     int getWindowWidth();

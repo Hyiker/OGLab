@@ -13,6 +13,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <unordered_map>
 
+#include "glError.hpp"
 #include "tiny_obj_loader.h"
 
 using namespace std;
@@ -55,9 +56,7 @@ void Mesh::prepare() {
     glBindVertexArray(0);
 }
 
-size_t Mesh::countVertex() const {
-    return vertices.size();
-}
+size_t Mesh::countVertex() const { return vertices.size(); }
 
 void Mesh::draw(ShaderProgram& sp) {
     glBindVertexArray(vao);
@@ -96,13 +95,9 @@ void Scene::translate(glm::vec3 pos) {
     m_modelmat = glm::translate(m_modelmat, pos);
 }
 
-glm::mat4 Scene::getModelMatrix() const {
-    return m_modelmat;
-}
+glm::mat4 Scene::getModelMatrix() const { return m_modelmat; }
 
-size_t Scene::countMesh() const {
-    return m_meshes.size();
-}
+size_t Scene::countMesh() const { return m_meshes.size(); }
 
 size_t Scene::countVertex() const {
     size_t cnt = 0;
@@ -147,7 +142,12 @@ static shared_ptr<Texture> loadTexture(
             throw runtime_error("Unsupported tex format " + to_string(ncomp));
             break;
     }
-    tex->setup(data, width, height, format);
+    tex->init();
+    tex->setup(data, width, height, GL_SRGB, format, 0);
+    tex->setSizeFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
+    tex->setWrapFilter(GL_REPEAT);
+    tex->generateMipmap();
+
     stbi_image_free(data);
     uniqueTexture[texName] = tex;
     return tex;
