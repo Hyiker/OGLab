@@ -131,7 +131,7 @@ void MyApplication::loop() {
     sp.setUniform("projection", perspective(45.f,
                                             float(getFramebufferWidth()) /
                                                 float(getFramebufferHeight()),
-                                            0.01f, 500.0f));
+                                            1.f, 500.0f));
     sp.setUniform("sunPosition", m_sun_position);
     m_scene.draw(sp);
     m_fb1.unbind();
