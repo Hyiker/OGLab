@@ -53,13 +53,11 @@ static void mouseCallback(GLFWwindow* window, double xposIn, double yposIn) {
 MyApplication::MyApplication(const string& path, int width, int height)
     : Application(width, height),
       m_scene(path),
-      vs(SHADER_DIR "/shader.vert", GL_VERTEX_SHADER),
-      fs(SHADER_DIR "/shader.frag", GL_FRAGMENT_SHADER),
-      sp({vs, fs}),
-      m_finalvs(SHADER_DIR "/finalShader.vert", GL_VERTEX_SHADER),
-      m_finalfs(SHADER_DIR "/finalShader.frag", GL_FRAGMENT_SHADER),
-      m_finalsp({m_finalvs, m_finalfs}),
-      m_sun_position(-23, 116, 0),
+      sp({{SHADER_DIR "/shader.vert", GL_VERTEX_SHADER},
+          {SHADER_DIR "/shader.frag", GL_FRAGMENT_SHADER}}),
+      m_finalsp({{SHADER_DIR "/finalShader.vert", GL_VERTEX_SHADER},
+                 {SHADER_DIR "/finalShader.frag", GL_FRAGMENT_SHADER}}),
+      m_sun_position(-53, 159, 2),
       cam(vec3(21, 74, -2), glm::vec3(0.0f, 1.0f, 0.0f), -2.2, -25) {
     m_scene.scale(vec3(0.1));
 
@@ -69,7 +67,7 @@ MyApplication::MyApplication(const string& path, int width, int height)
                getFramebufferHeight());
     m_fb1_tex.init();
     m_fb1_tex.setup(getFramebufferWidth(), getFramebufferHeight(), GL_RGB16F,
-                    GL_FLOAT, 0);
+                    GL_RGB, GL_FLOAT, 0);
     m_fb1_tex.setSizeFilter(GL_LINEAR, GL_LINEAR);
 
     m_fb1.init();
@@ -133,6 +131,7 @@ void MyApplication::loop() {
                                                 float(getFramebufferHeight()),
                                             1.f, 500.0f));
     sp.setUniform("sunPosition", m_sun_position);
+    sp.setUniform("camPosition", cam.getPosition());
     m_scene.draw(sp);
     m_fb1.unbind();
 

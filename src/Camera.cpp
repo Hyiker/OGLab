@@ -11,9 +11,15 @@ void Camera::updateCameraVectors() {
     up = glm::normalize(glm::cross(right, front));
 }
 
-glm::mat4 Camera::getViewMatrix() {
+glm::mat4 Camera::getViewMatrix() const {
     return glm::lookAt(position, position + front, up);
 }
+
+glm::mat4 Camera::getProjectionMatrix() const {
+    return glm::perspective(m_fov, m_aspect, m_znear, m_zfar);
+}
+
+glm::vec3 Camera::getPosition() const { return position; }
 
 void Camera::processKeyboard(CameraMovement direction, float deltaTime) {
     float velocity = speed * deltaTime;

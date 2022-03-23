@@ -3,23 +3,25 @@
 #include <glad/glad.h>
 
 #include <string>
-inline unsigned int calcMipmapLevels(int width, int height) {
-    unsigned int lvl = 0;
-    while ((width | height) >> 1) {
-        width >>= 1;
-        height >>= 1;
-        lvl++;
-    }
-    return lvl;
-}
 class Texture {
     GLuint m_id;
+    GLsizei width, height;
 
    public:
     void init() { glGenTextures(1, &m_id); }
     void bind() const { glBindTexture(GL_TEXTURE_2D, m_id); }
     void unbind() const { glBindTexture(GL_TEXTURE_2D, 0); }
     GLuint getId() const { return m_id; };
+    int getMipmapLevels() const {
+        unsigned int lvl = 0;
+        int width = this->width, height = this->height;
+        while ((width | height) >> 1) {
+            width >>= 1;
+            height >>= 1;
+            lvl++;
+        }
+        return lvl;
+    }
     void generateMipmap() {
         bind();
         glGenerateMipmap(GL_TEXTURE_2D);
@@ -39,17 +41,16 @@ class Texture {
         unbind();
     }
     void setup(GLsizei width, GLsizei height, GLenum internalformat,
-               GLenum type, GLsizei levels) {
-        bind();
-        glTexImage2D(GL_TEXTURE_2D, levels, internalformat, width, height, 0,
-                     GL_RGB, type, nullptr);
-        unbind();
+               GLenum format, GLenum type, GLsizei level) {
+        setup(nullptr, width, height, internalformat, format, type, level);
     }
     void setup(unsigned char* data, GLsizei width, GLsizei height,
-               GLenum internalformat, GLenum srcformat, GLint level) {
+               GLenum internalformat, GLenum format, GLenum type, GLint level) {
         bind();
+        this->width = width;
+        this->height = height;
         glTexImage2D(GL_TEXTURE_2D, level, internalformat, width, height, 0,
-                     srcformat, GL_UNSIGNED_BYTE, data);
+                     format, type, data);
 
         unbind();
     }

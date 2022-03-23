@@ -11,6 +11,7 @@
 
 #include <Scene.hpp>
 #include <string>
+#include <vector>
 
 #include "Application.hpp"
 #include "Camera.hpp"
@@ -20,12 +21,10 @@
 
 class MyApplication : public Application {
     Scene m_scene;
-    Shader vs;
-    Shader fs;
     ShaderProgram sp;
-    Shader m_finalvs, m_finalfs;
     ShaderProgram m_finalsp;
     glm::vec3 m_sun_position;
+
     Texture m_fb1_tex;
     Framebuffer m_fb1;
     Renderbuffer m_rb1;

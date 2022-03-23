@@ -24,6 +24,8 @@ add_executable(opengl-cmake-skeleton
   src/Quad.cpp
   src/Scene.hpp
   src/Framebuffer.hpp
+  src/GBuffer.hpp
+  src/GBuffer.cpp
   src/Texture.hpp
   src/Scene.cpp
 )

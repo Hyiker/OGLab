@@ -36,7 +36,6 @@ vec3 Uncharted2ToneMapping(vec3 color, float adaptedLum) {
     const float WHITE = 11.2;
     return F(1.6 * adaptedLum * color) / F(vec3(WHITE));
 }
-
 void main() {
     vec3 color = texture(screenTexture, TexCoords).rgb;
 

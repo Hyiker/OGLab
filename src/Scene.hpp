@@ -49,7 +49,7 @@ struct Mesh {
     GLuint vao, vbo, ebo;
     void prepare();
     size_t countVertex() const;
-    void draw(ShaderProgram& sp);
+    void draw(ShaderProgram& sp) const;
 };
 class Scene {
     std::vector<Mesh> m_meshes;
@@ -61,7 +61,7 @@ class Scene {
     glm::mat4 getModelMatrix() const;
     size_t countMesh() const;
     size_t countVertex() const;
-    void draw(ShaderProgram& sp);
+    void draw(ShaderProgram& sp) const;
     Scene(const std::string& path);
 };
 

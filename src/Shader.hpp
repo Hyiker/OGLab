@@ -46,6 +46,8 @@ class ShaderProgram {
    public:
     // constructor
     ShaderProgram(std::initializer_list<Shader> shaderList);
+    ShaderProgram(ShaderProgram&) = delete;
+    ShaderProgram(ShaderProgram&& other);
 
     // bind the program
     void use() const;

@@ -13,6 +13,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 using namespace std;
@@ -73,12 +74,9 @@ Shader::Shader(const std::string& filename, GLenum type) {
     }
 }
 
-GLuint Shader::getHandle() const {
-    return handle;
-}
+GLuint Shader::getHandle() const { return handle; }
 
-Shader::~Shader() {
-}
+Shader::~Shader() {}
 
 ShaderProgram::ShaderProgram() {
     handle = glCreateProgram();
@@ -92,6 +90,13 @@ ShaderProgram::ShaderProgram(std::initializer_list<Shader> shaderList)
         glAttachShader(handle, s.getHandle());
 
     link();
+}
+
+ShaderProgram::ShaderProgram(ShaderProgram&& other)
+    : uniforms{std::move(other.uniforms)},
+      attributes{std::move(other.attributes)},
+      handle{other.handle} {
+    other.handle = GL_INVALID_INDEX;
 }
 
 void ShaderProgram::link() {
@@ -215,13 +220,7 @@ ShaderProgram::~ShaderProgram() {
     // glDeleteProgram(handle);
 }
 
-void ShaderProgram::use() const {
-    glUseProgram(handle);
-}
-void ShaderProgram::unuse() const {
-    glUseProgram(0);
-}
+void ShaderProgram::use() const { glUseProgram(handle); }
+void ShaderProgram::unuse() const { glUseProgram(0); }
 
-GLuint ShaderProgram::getHandle() const {
-    return handle;
-}
+GLuint ShaderProgram::getHandle() const { return handle; }

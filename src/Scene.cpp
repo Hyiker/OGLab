@@ -58,7 +58,7 @@ void Mesh::prepare() {
 
 size_t Mesh::countVertex() const { return vertices.size(); }
 
-void Mesh::draw(ShaderProgram& sp) {
+void Mesh::draw(ShaderProgram& sp) const {
     glBindVertexArray(vao);
 
     sp.setUniform("material.ambient", material.ambient);
@@ -107,8 +107,8 @@ size_t Scene::countVertex() const {
     return cnt;
 }
 
-void Scene::draw(ShaderProgram& sp) {
-    for (auto& mesh : m_meshes) {
+void Scene::draw(ShaderProgram& sp) const {
+    for (const auto& mesh : m_meshes) {
         mesh.draw(sp);
     }
 }
@@ -143,7 +143,7 @@ static shared_ptr<Texture> loadTexture(
             break;
     }
     tex->init();
-    tex->setup(data, width, height, GL_SRGB, format, 0);
+    tex->setup(data, width, height, GL_SRGB, format, GL_UNSIGNED_BYTE, 0);
     tex->setSizeFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
     tex->setWrapFilter(GL_REPEAT);
     tex->generateMipmap();
