@@ -189,15 +189,17 @@ float calcShadow(in vec3 position, in ShadowMap shadowMap, in vec3 N, in vec3 L,
     float bias = max(EPS_10 * (1.0 - dot(N, L)), EPS);
     for (int i = 0; i < N_POISSON_SAMPLE; i++) {
         float shadwoMapDepth =
-            texture(shadowMap.depthMap,
-                    coord.xy + sampleSize * samplePoissonDisk(i))
+            textureLod(shadowMap.depthMap,
+                       coord.xy + sampleSize * samplePoissonDisk(i), 0)
                 .r;
 
         n_visible += shadwoMapDepth >= sampleDepth - bias ? 1 : 0;
     }
     // dbg.r = shadwoMapDepth;
     dbg.g = sampleDepth;
-    return float(n_visible) / float(N_POISSON_SAMPLE);
+    float shadow = 1.0 - float(n_visible) / float(N_POISSON_SAMPLE);
+    shadow = smoothstep(0.7, 1.0, shadow);
+    return shadow;
 }
 
 void main(void) {
@@ -211,9 +213,9 @@ void main(void) {
     vec3 viewDir = normalize(uCamPosition - position);
 
     vec3 shadowDbg;
-    float visibility =
+    float shadow =
         calcShadow(position, uShadowMap, normal, lightDir, shadowDbg);
     vec3 irradiance = calcIrradiance(normal, viewDir, albedo);
 
-    color = vec4(visibility * irradiance, 1.0);
+    color = vec4((1.0 - shadow) * irradiance, 1.0);
 }

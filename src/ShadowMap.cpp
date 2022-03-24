@@ -16,7 +16,7 @@ void ShadowMap::init() {
     m_depth.init();
     m_depth.setup(m_width, m_height, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT,
                   GL_FLOAT, 0);
-    m_depth.setSizeFilter(GL_NEAREST, GL_NEAREST);
+    m_depth.setSizeFilter(GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
     GLfloat borderColor[] = {1.0, 1.0, 1.0, 1.0};
     m_depth.setClampToBorderFilter(borderColor);
     m_framebuffer.attachTexture(m_depth, GL_DEPTH_ATTACHMENT, 0);
@@ -32,6 +32,7 @@ void ShadowMap::render(const Scene& scene, glm::vec3 sunPosition) {
     m_shader.use();
     m_shader.setUniform("uModel", scene.getModelMatrix());
     m_shader.setUniform("uLightTransform", getLightSpaceTransform(sunPosition));
+    m_depth.generateMipmap();
     scene.draw(m_shader);
     checkError();
     glCullFace(GL_BACK);

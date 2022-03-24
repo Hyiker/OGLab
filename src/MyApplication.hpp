@@ -26,6 +26,7 @@ class MyApplication : public Application {
     Scene m_scene;
     ShaderProgram m_finalsp;
     glm::vec3 m_sun_position;
+    bool m_sun_moved{true};
 
     ShadowMap m_shadowmap;
     GBuffer m_gbuffer;

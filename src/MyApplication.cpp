@@ -122,16 +122,22 @@ void MyApplication::cameraMove() {
 }
 
 void MyApplication::sunMove() {
-    if (glfwGetKey(getWindow(), GLFW_KEY_UP) == GLFW_PRESS)
+    if (glfwGetKey(getWindow(), GLFW_KEY_UP) == GLFW_PRESS) {
         m_sun_position.x += 10.0 * getFrameDeltaTime();
-    if (glfwGetKey(getWindow(), GLFW_KEY_DOWN) == GLFW_PRESS)
+        m_sun_moved = true;
+    }
+    if (glfwGetKey(getWindow(), GLFW_KEY_DOWN) == GLFW_PRESS) {
         m_sun_position.x -= 10.0 * getFrameDeltaTime();
-
-    if (glfwGetKey(getWindow(), GLFW_KEY_LEFT) == GLFW_PRESS)
+        m_sun_moved = true;
+    }
+    if (glfwGetKey(getWindow(), GLFW_KEY_LEFT) == GLFW_PRESS) {
         m_sun_position.z += 10.0 * getFrameDeltaTime();
-
-    if (glfwGetKey(getWindow(), GLFW_KEY_RIGHT) == GLFW_PRESS)
+        m_sun_moved = true;
+    }
+    if (glfwGetKey(getWindow(), GLFW_KEY_RIGHT) == GLFW_PRESS) {
         m_sun_position.z -= 10.0 * getFrameDeltaTime();
+        m_sun_moved = true;
+    }
 }
 void MyApplication::loop() {
     if (glfwWindowShouldClose(getWindow()) ||
@@ -143,7 +149,10 @@ void MyApplication::loop() {
     sunMove();
 
     // shadowmap
-    m_shadowmap.render(m_scene, m_sun_position);
+    if (m_sun_moved) {
+        m_shadowmap.render(m_scene, m_sun_position);
+        m_sun_moved = false;
+    }
     glCheckError(__FILE__, __LINE__);
 
     // gbuffer
