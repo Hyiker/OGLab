@@ -9,6 +9,8 @@
 #ifndef OPENGL_CMAKE_SKELETON_GLERROR_HPP
 #define OPENGL_CMAKE_SKELETON_GLERROR_HPP
 
+#define checkError() glCheckError(__FILE__, __LINE__)
+
 // Ask Opengl for errors:
 // Result is printed on the standard output
 // usage :

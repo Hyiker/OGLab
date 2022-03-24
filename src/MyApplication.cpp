@@ -55,24 +55,31 @@ MyApplication::MyApplication(const string& path, int width, int height)
       m_scene(path),
       m_finalsp({{SHADER_DIR "/finalShader.vert", GL_VERTEX_SHADER},
                  {SHADER_DIR "/finalShader.frag", GL_FRAGMENT_SHADER}}),
-      m_sun_position(0, 10, 0),
+      m_sun_position(0, 10.0, 0),
+      m_shadowmap{
+          ShaderProgram(
+              {{SHADER_DIR "/shadowmapShader.vert", GL_VERTEX_SHADER},
+               {SHADER_DIR "/shadowmapShader.frag", GL_FRAGMENT_SHADER}}),
+          getFramebufferWidth(), getFramebufferHeight()},
       m_gbuffer{
           ShaderProgram({{SHADER_DIR "/shader.vert", GL_VERTEX_SHADER},
                          {SHADER_DIR "/gShader.frag", GL_FRAGMENT_SHADER}}),
           getFramebufferWidth(), getFramebufferHeight()},
       m_defrender{
           ShaderProgram(
-              {{SHADER_DIR "/finalShader.vert", GL_VERTEX_SHADER},
+              {{SHADER_DIR "/deferredShader.vert", GL_VERTEX_SHADER},
                {SHADER_DIR "/deferredShader.frag", GL_FRAGMENT_SHADER}}),
           getFramebufferWidth(), getFramebufferHeight()},
-      m_cam(vec3(21, 74, -2), glm::vec3(0.0f, 1.0f, 0.0f), -2.2, -25) {
-    m_scene.scale(vec3(0.1));
+      m_cam(vec3(-0.65, 0.4, 0), glm::vec3(0.0f, 1.0f, 0.0f), -11.5, -9.2) {
+    m_scene.scale(vec3(0.0005));
 
     glEnable(GL_DEPTH_TEST);
     glCheckError(__FILE__, __LINE__);
     m_gbuffer.init();
     glCheckError(__FILE__, __LINE__);
     m_defrender.init();
+    glCheckError(__FILE__, __LINE__);
+    m_shadowmap.init();
     glCheckError(__FILE__, __LINE__);
 
     glfwSetWindowUserPointer(getWindow(), this);
@@ -131,22 +138,29 @@ void MyApplication::loop() {
         glfwGetKey(getWindow(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
         exit();
 
+    // input interact
     cameraMove();
     sunMove();
-    glClearColor(0.53, 0.81, 0.92, 1);
-    glEnable(GL_DEPTH_TEST);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    m_gbuffer.render(m_scene, m_cam);
 
+    // shadowmap
+    m_shadowmap.render(m_scene, m_sun_position);
     glCheckError(__FILE__, __LINE__);
 
-    m_defrender.render(m_quad, m_gbuffer, m_cam, m_sun_position);
+    // gbuffer
+    m_gbuffer.render(m_scene, m_cam);
+    glCheckError(__FILE__, __LINE__);
 
+    // gbuffer
+    m_defrender.render(m_quad, m_gbuffer, m_shadowmap, m_cam, m_sun_position);
+    glCheckError(__FILE__, __LINE__);
+
+    // screen quad
     glClearColor(0, 0, 0, 1);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
     m_finalsp.use();
     m_finalsp.setTexture("screenTexture", 0, m_defrender.getTexture());
+    m_finalsp.setTexture("lightDepthTexture", 1, m_shadowmap.getDepthTexture());
     m_quad.draw();
 
     glCheckError(__FILE__, __LINE__);

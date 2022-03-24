@@ -15,7 +15,7 @@ void GBuffer::init() {
     m_framebuffer.attachTexture(m_depth, GL_DEPTH_ATTACHMENT, 0);
 
     m_position.init();
-    m_position.setup(m_width, m_height, GL_RGB16F, GL_RGB, GL_FLOAT, 0);
+    m_position.setup(m_width, m_height, GL_RGB32F, GL_RGB, GL_FLOAT, 0);
     m_position.setSizeFilter(GL_NEAREST, GL_NEAREST);
     m_framebuffer.attachTexture(m_position, GL_COLOR_ATTACHMENT0, 0);
 

@@ -13,7 +13,8 @@ void DeferredRender::init() {
 }
 
 void DeferredRender::render(const Quad& quad, const GBuffer& gbuffer,
-                            const Camera& cam, glm::vec3 sunPosition) {
+                            const ShadowMap& shadowmap, const Camera& cam,
+                            glm::vec3 sunPosition) {
     m_framebuffer.bind();
     glClearColor(0, 0, 0, 1);
     glDisable(GL_DEPTH_TEST);
@@ -25,6 +26,9 @@ void DeferredRender::render(const Quad& quad, const GBuffer& gbuffer,
     m_shader.setTexture("uGbuffer.depthTex", 1, gbuffer.getDepth());
     m_shader.setTexture("uGbuffer.normalTex", 2, gbuffer.getNormal());
     m_shader.setTexture("uGbuffer.albedoTex", 3, gbuffer.getAlbedo());
+    m_shader.setTexture("uShadowMap.depthMap", 4, shadowmap.getDepthTexture());
+    m_shader.setUniform("uShadowMap.lightTransform",
+                        shadowmap.getLightSpaceTransform(sunPosition));
     m_shader.setUniform("uLightDir", -sunPosition);
     m_shader.setUniform("uCamPosition", cam.getPosition());
 

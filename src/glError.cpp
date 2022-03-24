@@ -9,19 +9,20 @@
 #include "glError.hpp"
 
 #include <glad/glad.h>
+
 #include <iostream>
 #include <string>
 
 using namespace std;
 
 void glCheckError(const char* file, unsigned int line) {
-  GLenum errorCode = glGetError();
+    GLenum errorCode = glGetError();
 
-  while (errorCode != GL_NO_ERROR) {
-    string fileString(file);
-    string error = "unknown error";
+    while (errorCode != GL_NO_ERROR) {
+        string fileString(file);
+        string error = "unknown error";
 
-    // clang-format off
+        // clang-format off
     switch (errorCode) {
       case GL_INVALID_ENUM:      error = "GL_INVALID_ENUM"; break;
       case GL_INVALID_VALUE:     error = "GL_INVALID_VALUE"; break;
@@ -30,10 +31,10 @@ void glCheckError(const char* file, unsigned int line) {
       case GL_STACK_UNDERFLOW:   error = "GL_STACK_UNDERFLOW"; break;
       case GL_OUT_OF_MEMORY:     error = "GL_OUT_OF_MEMORY"; break;
     }
-    // clang-format on
+        // clang-format on
 
-    cerr << "OpenglError : file=" << file << " line=" << line
-         << " error:" << error << endl;
-    errorCode = glGetError();
-  }
+        cerr << "OpenglError : file=" << file << " line=" << line
+             << " error:" << error << endl;
+        errorCode = glGetError();
+    }
 }

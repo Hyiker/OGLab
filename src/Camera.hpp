@@ -23,7 +23,7 @@ class Camera {
     glm::vec3 worldUp;
     float yaw;
     float pitch;
-    float speed{25.0f};
+    float speed{0.25f};
     float sensitivity{0.2f};
     float m_znear{0.1f};
     float m_zfar{1000.f};

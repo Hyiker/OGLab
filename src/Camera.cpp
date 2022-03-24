@@ -35,6 +35,8 @@ void Camera::processMouseMovement(float xoffset, float yoffset,
     yoffset *= sensitivity;
 
     yaw += xoffset;
+    yaw = yaw > 360.0 ? yaw - 360.0 : yaw;
+    yaw = yaw < -360.0 ? yaw + 360.0 : yaw;
     pitch += yoffset;
 
     if (constrainpitch) {

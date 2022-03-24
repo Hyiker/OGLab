@@ -41,6 +41,13 @@ class Texture {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, filter);
         unbind();
     }
+    void setClampToBorderFilter(GLfloat* borderColor) {
+        bind();
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+        unbind();
+    }
     void setup(GLsizei width, GLsizei height, GLenum internalformat,
                GLenum format, GLenum type, GLsizei level) {
         setup(nullptr, width, height, internalformat, format, type, level);

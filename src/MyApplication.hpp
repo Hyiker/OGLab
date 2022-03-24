@@ -20,12 +20,14 @@
 #include "GBuffer.hpp"
 #include "Quad.hpp"
 #include "Shader.hpp"
+#include "ShadowMap.hpp"
 
 class MyApplication : public Application {
     Scene m_scene;
     ShaderProgram m_finalsp;
     glm::vec3 m_sun_position;
 
+    ShadowMap m_shadowmap;
     GBuffer m_gbuffer;
     DeferredRender m_defrender;
 

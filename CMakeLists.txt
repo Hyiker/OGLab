@@ -28,7 +28,8 @@ add_executable(opengl-cmake-skeleton
   src/GBuffer.cpp
   src/DeferredRender.hpp
   src/DeferredRender.cpp
-  src/GBuffer.hpp
+  src/ShadowMap.hpp
+  src/ShadowMap.cpp
   src/Texture.hpp
   src/Scene.cpp
 )

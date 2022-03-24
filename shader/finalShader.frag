@@ -4,6 +4,7 @@ out vec4 FragColor;
 in vec2 texCoord;
 
 uniform sampler2D screenTexture;
+uniform sampler2D lightDepthTexture;
 
 vec3 reinhardToneMapping(vec3 color, float adaptedLum) {
     const float MIDDLE_GREY = 1;
@@ -38,6 +39,8 @@ vec3 Uncharted2ToneMapping(vec3 color, float adaptedLum) {
 }
 void main() {
     vec3 color = texture(screenTexture, texCoord).rgb;
+    vec3 colorDbg = color;
+    vec3 depth = texture(lightDepthTexture, texCoord).rrr;
 
     color = Uncharted2ToneMapping(color, 1.0);
 

@@ -5,6 +5,7 @@
 #include "GBuffer.hpp"
 #include "Quad.hpp"
 #include "Shader.hpp"
+#include "ShadowMap.hpp"
 #include "Texture.hpp"
 class DeferredRender {
     Texture m_texture;
@@ -20,7 +21,8 @@ class DeferredRender {
           m_width{width},
           m_height{height} {}
     void init();
-    void render(const Quad& quad, const GBuffer& gbuffer, const Camera& cam,
+    void render(const Quad& quad, const GBuffer& gbuffer,
+                const ShadowMap& shadowmap, const Camera& cam,
                 glm::vec3 sunPosition);
     const Texture& getTexture() const { return m_texture; }
 };
