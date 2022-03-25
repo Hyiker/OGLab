@@ -5,6 +5,7 @@ in vec2 texCoord;
 
 uniform sampler2D screenTexture;
 uniform sampler2D lightDepthTexture;
+uniform sampler2D bloomTexture;
 
 vec3 reinhardToneMapping(vec3 color, float adaptedLum) {
     const float MIDDLE_GREY = 1;
@@ -39,10 +40,14 @@ vec3 Uncharted2ToneMapping(vec3 color, float adaptedLum) {
 }
 void main() {
     vec3 color = texture(screenTexture, texCoord).rgb;
+    vec3 bloomColor = texture(bloomTexture, texCoord).rgb;
+
+    color += bloomColor;
+
     vec3 colorDbg = color;
     vec3 depth = texture(lightDepthTexture, texCoord).rrr;
 
-    color = Uncharted2ToneMapping(color, 1.0);
+    color = ACESToneMapping(color, 2.0);
 
     // gamma correction
     // ! FINAL STEP

@@ -117,7 +117,6 @@ vec3 doReflectiveShadowMapping(vec3 P, vec3 N, vec3 lCoord) {
 vec3 calcIrradiance(in vec3 N, in vec3 viewDir, in vec3 albedo,
                     in vec3 radiance) {
     vec3 Lo = vec3(0.0);
-    float dW = N_SAMPLE_INV;
     vec3 wo = normalize(viewDir);
     vec3 wi = sampleLightDir();
     float cosTheta = max(0.0, dot(wi, N));
@@ -127,7 +126,7 @@ vec3 calcIrradiance(in vec3 N, in vec3 viewDir, in vec3 albedo,
     vec3 kDiffuse = vec3(1.0) - kSpecular;
 
     vec3 specular = brdf(N, wi, wo, cosTheta, F);
-    Lo += (kDiffuse * albedo * PI_INV + specular) * radiance * dot(N, wi);
+    Lo += (kDiffuse * albedo + specular) * radiance * dot(N, wi);
 
     return Lo;
 }
@@ -282,11 +281,10 @@ void main(void) {
     float shadow = calcShadow(position, uShadowMap, normal, lightDir, shadowDbg,
                               lightCoord);
     vec3 dirIllumination =
-        calcIrradiance(normal, viewDir, albedo, vec3(5, 4, 4) * 3.0);
+        calcIrradiance(normal, viewDir, albedo, vec3(5, 4, 4) * 2.0);
     vec3 ambientIllumination = vec3(0.03) * albedo;
     vec3 indirIllumination =
-        doReflectiveShadowMapping(position, normal, lightCoord) * albedo *
-        PI_INV;
+        doReflectiveShadowMapping(position, normal, lightCoord) * albedo;
 
     color =
         vec4(dirIllumination * shadow + indirIllumination + ambientIllumination,

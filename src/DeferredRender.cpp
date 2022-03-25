@@ -15,7 +15,7 @@ static void createRandomData(glm::vec3* randomData, int size) {
         randomData[i].z = r1 * r1;
     }
 }
-#define RAND_SIZE 32
+#define RAND_SIZE 100
 void DeferredRender::init() {
     m_framebuffer.init();
 

@@ -74,6 +74,10 @@ MyApplication::MyApplication(const string& path, int width, int height)
               {{SHADER_DIR "/deferredShader.vert", GL_VERTEX_SHADER},
                {SHADER_DIR "/deferredShader.frag", GL_FRAGMENT_SHADER}}),
           getFramebufferWidth(), getFramebufferHeight()},
+      m_bloombuffer{
+          ShaderProgram({{SHADER_DIR "/finalShader.vert", GL_VERTEX_SHADER},
+                         {SHADER_DIR "/bloomShader.frag", GL_FRAGMENT_SHADER}}),
+          getFramebufferWidth(), getFramebufferHeight()},
       m_cam(vec3(-0.65, 0.4, 0), glm::vec3(0.0f, 1.0f, 0.0f), -11.5, -9.2) {
     m_scene.scale(vec3(0.0005));
 
@@ -86,6 +90,9 @@ MyApplication::MyApplication(const string& path, int width, int height)
     m_shadowmap.init();
     checkError();
     m_rsmbuffer.init();
+    checkError();
+    m_bloombuffer.init();
+    checkError();
 
     glfwSetWindowUserPointer(getWindow(), this);
     glfwSetCursorPosCallback(getWindow(), mouseCallback);
@@ -176,13 +183,21 @@ void MyApplication::loop() {
                        m_sun_position);
     checkError();
 
+    // bloom blur
+    m_bloombuffer.render(m_quad, m_defrender.getTexture());
+    checkError();
+
     // screen quad
     glClearColor(0, 0, 0, 1);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
     m_finalsp.use();
     m_finalsp.setTexture("screenTexture", 0, m_defrender.getTexture());
-    m_finalsp.setTexture("lightDepthTexture", 1, m_shadowmap.getDepthTexture());
+    m_finalsp.setTexture("bloomTexture", 1, m_bloombuffer.getBloomTexture());
+    // m_finalsp.setTexture("screenTexture", 0,
+    // m_bloombuffer.getBloomTexture());
+
+    m_finalsp.setTexture("lightDepthTexture", 2, m_shadowmap.getDepthTexture());
     m_quad.draw();
 
     glCheckError(__FILE__, __LINE__);

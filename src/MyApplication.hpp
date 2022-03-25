@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "Application.hpp"
+#include "BloomBuffer.hpp"
 #include "Camera.hpp"
 #include "DeferredRender.hpp"
 #include "Framebuffer.hpp"
@@ -33,6 +34,7 @@ class MyApplication : public Application {
     RSMBuffer m_rsmbuffer;
     GBuffer m_gbuffer;
     DeferredRender m_defrender;
+    BloomBuffer m_bloombuffer;
 
     Quad m_quad;
     Camera m_cam;

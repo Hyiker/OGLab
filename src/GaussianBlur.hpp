@@ -16,7 +16,13 @@ class GaussianBlur {
    public:
     GaussianBlur(GLsizei width, GLsizei height);
     void init(GLenum internalformat, GLenum format, GLenum type);
-    void blur(Texture& tex);
+    /**
+     * @brief Blur a texture
+     *
+     * @param tex input Texture
+     * @param blurKerSize 5, 9, 13
+     */
+    void blur(Texture& tex, int blurKerSize = 5);
 };
 
 #endif /* GAUSSIANBLUR_H */

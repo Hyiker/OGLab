@@ -34,6 +34,8 @@ add_executable(oglab
   src/ShadowMap.cpp
   src/GaussianBlur.hpp
   src/GaussianBlur.cpp
+  src/BloomBuffer.hpp
+  src/BloomBuffer.cpp
   src/Texture.hpp
   src/Scene.cpp
 )

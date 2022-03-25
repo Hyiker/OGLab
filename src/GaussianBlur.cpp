@@ -29,7 +29,7 @@ void GaussianBlur::init(GLenum internalformat, GLenum format, GLenum type) {
     m_fbs[1].attachTexture(m_texs[1], GL_COLOR_ATTACHMENT0, 0);
 }
 
-void GaussianBlur::blur(Texture& tex) {
+void GaussianBlur::blur(Texture& tex, int blurKerSize) {
     m_fbs[0].bind();
     glDisable(GL_DEPTH_TEST);
     glViewport(0, 0, m_width, m_height);
@@ -38,6 +38,7 @@ void GaussianBlur::blur(Texture& tex) {
 
     m_shader.setTexture("uSrcTex", 0, tex);
     m_shader.setUniform("uDirection", vec2(1.0, 0.0));
+    m_shader.setUniform("uBlurKerSize", blurKerSize);
     m_quad.draw();
     m_fbs[0].unbind();
 
@@ -48,6 +49,7 @@ void GaussianBlur::blur(Texture& tex) {
 
     m_shader.setTexture("uSrcTex", 0, m_texs[0]);
     m_shader.setUniform("uDirection", vec2(0.0, 1.0));
+    m_shader.setUniform("uBlurKerSize", blurKerSize);
     m_quad.draw();
 
     glActiveTexture(GL_TEXTURE0);
