@@ -16,11 +16,18 @@ struct ShadowMap {
     sampler2D depthMap;
     mat4 lightTransform;
 };
+struct RSMBuffer {
+    sampler2D positionTex;
+    sampler2D depthTex;
+    sampler2D normalTex;
+    sampler2D fluxTex;
+};
 
 uniform GBuffer uGbuffer;
 uniform ShadowMap uShadowMap;
 uniform vec3 uLightDir;
 uniform vec3 uCamPosition;
+uniform RSMBuffer uRSMBuffer;
 
 // output
 out vec4 color;
@@ -83,7 +90,32 @@ vec3 brdf(in vec3 N, in vec3 wi, in vec3 wo, in float cosTheta, in vec3 F) {
     return res;
 }
 vec3 sampleLightDir() { return normalize(-uLightDir); }
-vec3 calcIrradiance(in vec3 N, in vec3 viewDir, in vec3 albedo) {
+uniform int uRSMRandomTexSize;
+uniform sampler2D uRSMRandomTex;
+uniform float uIndirIntensity;
+// from
+// https://sudonull.com/post/70-Reflective-Shadow-Maps-Part-2-Implementation
+vec3 doReflectiveShadowMapping(vec3 P, vec3 N, vec3 lCoord) {
+    vec3 indirectIllumination = vec3(0, 0, 0);
+    float rMax = 0.03;
+    for (int i = 0; i < uRSMRandomTexSize; ++i) {
+        vec3 rnd = texelFetch(uRSMRandomTex, ivec2(i, 0), 0).xyz;
+        vec2 coords = lCoord.xy + rMax * rnd.xy;
+        vec3 vplPositionWS = texture(uRSMBuffer.positionTex, coords).xyz;
+        vec3 vplNormalWS = normalize(texture(uRSMBuffer.normalTex, coords).xyz);
+        vec3 flux = texture(uRSMBuffer.fluxTex, coords).rgb;
+        vec3 r = P - vplPositionWS;
+        vec3 result =
+            flux * ((max(0, dot(vplNormalWS, r)) * max(0, dot(N, -r))) /
+                    pow(length(r), 4));
+        result *= rnd.z;
+        indirectIllumination += result;
+    }
+    return max(indirectIllumination, vec3(0.0)) / float(uRSMRandomTexSize);
+}
+
+vec3 calcIrradiance(in vec3 N, in vec3 viewDir, in vec3 albedo,
+                    in vec3 radiance) {
     vec3 Lo = vec3(0.0);
     float dW = N_SAMPLE_INV;
     vec3 wo = normalize(viewDir);
@@ -95,115 +127,143 @@ vec3 calcIrradiance(in vec3 N, in vec3 viewDir, in vec3 albedo) {
     vec3 kDiffuse = vec3(1.0) - kSpecular;
 
     vec3 specular = brdf(N, wi, wo, cosTheta, F);
-    vec3 radiance = vec3(3.0) * 5.0;
     Lo += (kDiffuse * albedo * PI_INV + specular) * radiance * dot(N, wi);
 
     return Lo;
 }
 
-vec2 poissonDisk[64];
-void initPoissonDisk() {
-    poissonDisk[0] = vec2(-0.613392, 0.617481);
-    poissonDisk[1] = vec2(0.170019, -0.040254);
-    poissonDisk[2] = vec2(-0.299417, 0.791925);
-    poissonDisk[3] = vec2(0.645680, 0.493210);
-    poissonDisk[4] = vec2(-0.651784, 0.717887);
-    poissonDisk[5] = vec2(0.421003, 0.027070);
-    poissonDisk[6] = vec2(-0.817194, -0.271096);
-    poissonDisk[7] = vec2(-0.705374, -0.668203);
-    poissonDisk[8] = vec2(0.977050, -0.108615);
-    poissonDisk[9] = vec2(0.063326, 0.142369);
-    poissonDisk[10] = vec2(0.203528, 0.214331);
-    poissonDisk[11] = vec2(-0.667531, 0.326090);
-    poissonDisk[12] = vec2(-0.098422, -0.295755);
-    poissonDisk[13] = vec2(-0.885922, 0.215369);
-    poissonDisk[14] = vec2(0.566637, 0.605213);
-    poissonDisk[15] = vec2(0.039766, -0.396100);
-    poissonDisk[16] = vec2(0.751946, 0.453352);
-    poissonDisk[17] = vec2(0.078707, -0.715323);
-    poissonDisk[18] = vec2(-0.075838, -0.529344);
-    poissonDisk[19] = vec2(0.724479, -0.580798);
-    poissonDisk[20] = vec2(0.222999, -0.215125);
-    poissonDisk[21] = vec2(-0.467574, -0.405438);
-    poissonDisk[22] = vec2(-0.248268, -0.814753);
-    poissonDisk[23] = vec2(0.354411, -0.887570);
-    poissonDisk[24] = vec2(0.175817, 0.382366);
-    poissonDisk[25] = vec2(0.487472, -0.063082);
-    poissonDisk[26] = vec2(-0.084078, 0.898312);
-    poissonDisk[27] = vec2(0.488876, -0.783441);
-    poissonDisk[28] = vec2(0.470016, 0.217933);
-    poissonDisk[29] = vec2(-0.696890, -0.549791);
-    poissonDisk[30] = vec2(-0.149693, 0.605762);
-    poissonDisk[31] = vec2(0.034211, 0.979980);
-    poissonDisk[32] = vec2(0.503098, -0.308878);
-    poissonDisk[33] = vec2(-0.016205, -0.872921);
-    poissonDisk[34] = vec2(0.385784, -0.393902);
-    poissonDisk[35] = vec2(-0.146886, -0.859249);
-    poissonDisk[36] = vec2(0.643361, 0.164098);
-    poissonDisk[37] = vec2(0.634388, -0.049471);
-    poissonDisk[38] = vec2(-0.688894, 0.007843);
-    poissonDisk[39] = vec2(0.464034, -0.188818);
-    poissonDisk[40] = vec2(-0.440840, 0.137486);
-    poissonDisk[41] = vec2(0.364483, 0.511704);
-    poissonDisk[42] = vec2(0.034028, 0.325968);
-    poissonDisk[43] = vec2(0.099094, -0.308023);
-    poissonDisk[44] = vec2(0.693960, -0.366253);
-    poissonDisk[45] = vec2(0.678884, -0.204688);
-    poissonDisk[46] = vec2(0.001801, 0.780328);
-    poissonDisk[47] = vec2(0.145177, -0.898984);
-    poissonDisk[48] = vec2(0.062655, -0.611866);
-    poissonDisk[49] = vec2(0.315226, -0.604297);
-    poissonDisk[50] = vec2(-0.780145, 0.486251);
-    poissonDisk[51] = vec2(-0.371868, 0.882138);
-    poissonDisk[52] = vec2(0.200476, 0.494430);
-    poissonDisk[53] = vec2(-0.494552, -0.711051);
-    poissonDisk[54] = vec2(0.612476, 0.705252);
-    poissonDisk[55] = vec2(-0.578845, -0.768792);
-    poissonDisk[56] = vec2(-0.772454, -0.090976);
-    poissonDisk[57] = vec2(0.504440, 0.372295);
-    poissonDisk[58] = vec2(0.155736, 0.065157);
-    poissonDisk[59] = vec2(0.391522, 0.849605);
-    poissonDisk[60] = vec2(-0.620106, -0.328104);
-    poissonDisk[61] = vec2(0.789239, -0.419965);
-    poissonDisk[62] = vec2(-0.545396, 0.538133);
-    poissonDisk[63] = vec2(-0.178564, -0.596057);
+vec4 convertOptimizedMoments(in vec4 optimizedMoments) {
+    optimizedMoments[0] -= 0.03595588480;
+    return mat4(0.222774414, 0.154967926, 0.145198894, 0.16312744, 0.077197286,
+                0.139462942, 0.212020215, 0.259143226, 0.792698663, 0.796341583,
+                0.725869446, 0.653909249, 0.031941755, -0.172282317,
+                -0.275801481, -0.337613173) *
+           optimizedMoments;
 }
-#define N_POISSON_SAMPLE 64
-vec2 samplePoissonDisk(int i) { return poissonDisk[i]; }
+
+float mad(in float mvalue, in float avalue, in float bvalue) {
+    return mvalue * avalue + bvalue;
+}
+
+float compute_msm_shadow_intensity(vec4 b, float fragment_depth) {
+    // OpenGL 4 only - fma has higher precision:
+    // float l32_d22 = fma(-b.x, b.y, b.z); // a * b + c
+    // float d22 = fma(-b.x, b.x, b.y);     // a * b + c
+    // float squared_depth_variance = fma(-b.x, b.y, b.z); // a * b + c
+
+    float l32_d22 = -b.x * b.y + b.z;
+    float d22 = -b.x * b.x + b.y;
+    float squared_depth_variance = -b.x * b.y + b.z;
+
+    float d33_d22 =
+        dot(vec2(squared_depth_variance, -l32_d22), vec2(d22, l32_d22));
+    float inv_d22 = 1.0 - d22;
+    float l32 = l32_d22 * inv_d22;
+
+    float z_zero = fragment_depth;
+    vec3 c = vec3(1.0, z_zero - b.x, z_zero * z_zero);
+    c.z -= b.y + l32 * c.y;
+    c.y *= inv_d22;
+    c.z *= d22 / d33_d22;
+    c.y -= l32 * c.z;
+    c.x -= dot(c.yz, b.xy);
+
+    float inv_c2 = 1.0 / c.z;
+    float p = c.y * inv_c2;
+    float q = c.x * inv_c2;
+    float r = sqrt((p * p * 0.25) - q);
+
+    float z_one = -p * 0.5 - r;
+    float z_two = -p * 0.5 + r;
+
+    vec4 switch_msm;
+    if (z_two < z_zero) {
+        switch_msm = vec4(z_one, z_zero, 1.0, 1.0);
+    } else {
+        if (z_one < z_zero) {
+            switch_msm = vec4(z_zero, z_one, 0.0, 1.0);
+        } else {
+            switch_msm = vec4(0.0);
+        }
+    }
+
+    float quotient =
+        (switch_msm.x * z_two - b.x * (switch_msm.x + z_two + b.y)) /
+        ((z_two - switch_msm.y) * (z_zero - z_one));
+    return clamp(switch_msm.y + switch_msm.z * quotient, 0.0, 1.0);
+}
+// https://github.com/TheRealMJP/Shadows/blob/master/Shadows/MSM.hlsl
+float computeMSMHamburger(in vec4 moments, in float fragmentDepth,
+                          in float depthBias, in float momentBias) {
+    // Bias input data to avoid artifacts
+    vec4 b = mix(moments, vec4(0.5, 0.5, 0.5, 0.5), momentBias);
+    vec4 z;
+    z[0] = fragmentDepth - depthBias;
+
+    // Compute a Cholesky factorization of the Hankel matrix B storing only non-
+    // trivial entries or related products
+    float L32D22 = mad(-b[0], b[1], b[2]);
+    float D22 = mad(-b[0], b[0], b[1]);
+    float squaredDepthVariance = mad(-b[1], b[1], b[3]);
+    float D33D22 = dot(vec2(squaredDepthVariance, -L32D22), vec2(D22, L32D22));
+    float InvD22 = 1.0f / D22;
+    float L32 = L32D22 * InvD22;
+
+    // Obtain a scaled inverse image of bz = (1,z[0],z[0]*z[0])^T
+    vec3 c = vec3(1.0f, z[0], z[0] * z[0]);
+
+    // Forward substitution to solve L*c1=bz
+    c[1] -= b.x;
+    c[2] -= b.y + L32 * c[1];
+
+    // Scaling to solve D*c2=c1
+    c[1] *= InvD22;
+    c[2] *= D22 / D33D22;
+
+    // Backward substitution to solve L^T*c3=c2
+    c[1] -= L32 * c[2];
+    c[0] -= dot(c.yz, b.xy);
+
+    // Solve the quadratic equation c[0]+c[1]*z+c[2]*z^2 to obtain solutions
+    // z[1] and z[2]
+    float p = c[1] / c[2];
+    float q = c[0] / c[2];
+    float D = (p * p * 0.25f) - q;
+    float r = sqrt(D);
+    z[1] = -p * 0.5f - r;
+    z[2] = -p * 0.5f + r;
+
+    // Compute the shadow intensity by summing the appropriate weights
+    vec4 switchVal = (z[2] < z[0])
+                         ? vec4(z[1], z[0], 1.0f, 1.0f)
+                         : ((z[1] < z[0]) ? vec4(z[0], z[1], 0.0f, 1.0f)
+                                          : vec4(0.0f, 0.0f, 0.0f, 0.0f));
+    float quotient =
+        (switchVal[0] * z[2] - b[0] * (switchVal[0] + z[2]) + b[1]) /
+        ((z[2] - switchVal[1]) * (z[0] - z[1]));
+    float shadowIntensity = switchVal[2] + switchVal[3] * quotient;
+    return 1.0f - clamp(shadowIntensity, 0.0, 1.0);
+}
 
 #define EPS 5e-3
 #define EPS_10 5e-2
 float calcShadow(in vec3 position, in ShadowMap shadowMap, in vec3 N, in vec3 L,
-                 inout vec3 dbg) {
-    vec4 lightSpacePos = (shadowMap.lightTransform * vec4(position, 1.0));
-    vec3 coord = lightSpacePos.xyz / lightSpacePos.w;
-    coord = coord + vec3(1.0);
-    coord *= 0.5;
-
+                 inout vec3 dbg, in vec3 coord) {
     float sampleDepth = coord.z;
 
-    vec2 texSize = textureSize(shadowMap.depthMap, 0);
-    vec2 sampleStepSize = vec2(4.0);
-    vec2 sampleSize = sampleStepSize / texSize;
+    vec4 moments =
+        convertOptimizedMoments(texture(shadowMap.depthMap, coord.xy));
+
     int n_visible = 0;
     float bias = max(EPS_10 * (1.0 - dot(N, L)), EPS);
-    for (int i = 0; i < N_POISSON_SAMPLE; i++) {
-        float shadwoMapDepth =
-            textureLod(shadowMap.depthMap,
-                       coord.xy + sampleSize * samplePoissonDisk(i), 0)
-                .r;
-
-        n_visible += shadwoMapDepth >= sampleDepth - bias ? 1 : 0;
-    }
     // dbg.r = shadwoMapDepth;
     dbg.g = sampleDepth;
-    float shadow = 1.0 - float(n_visible) / float(N_POISSON_SAMPLE);
+    float shadow = computeMSMHamburger(moments, sampleDepth, bias, 3e-5);
     shadow = smoothstep(0.7, 1.0, shadow);
     return shadow;
 }
 
 void main(void) {
-    initPoissonDisk();
     vec3 position = texture(uGbuffer.positionTex, texCoord).xyz;
     vec3 albedo = texture(uGbuffer.albedoTex, texCoord).rgb;
     vec3 normal = texture(uGbuffer.normalTex, texCoord).xyz;
@@ -213,9 +273,24 @@ void main(void) {
     vec3 viewDir = normalize(uCamPosition - position);
 
     vec3 shadowDbg;
-    float shadow =
-        calcShadow(position, uShadowMap, normal, lightDir, shadowDbg);
-    vec3 irradiance = calcIrradiance(normal, viewDir, albedo);
 
-    color = vec4((1.0 - shadow) * irradiance, 1.0);
+    vec4 lightSpacePos = (uShadowMap.lightTransform * vec4(position, 1.0));
+    vec3 lightCoord = lightSpacePos.xyz / lightSpacePos.w;
+    lightCoord = lightCoord + vec3(1.0);
+    lightCoord *= 0.5;
+
+    float shadow = calcShadow(position, uShadowMap, normal, lightDir, shadowDbg,
+                              lightCoord);
+    vec3 dirIllumination =
+        calcIrradiance(normal, viewDir, albedo, vec3(5, 4, 4) * 3.0);
+    vec3 ambientIllumination = vec3(0.03) * albedo;
+    vec3 indirIllumination =
+        doReflectiveShadowMapping(position, normal, lightCoord) * albedo *
+        PI_INV;
+
+    color =
+        vec4(dirIllumination * shadow + indirIllumination + ambientIllumination,
+             1.0);
+    // color = vec4(shadow);
+    // color = vec4(texture(uRSMBuffer.fluxTex, texCoord).rgb, 1.0);
 }

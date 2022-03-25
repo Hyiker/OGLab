@@ -65,4 +65,6 @@ class Scene {
     Scene(const std::string& path);
 };
 
+glm::mat4 getLightSpaceTransform(glm::vec3 lightPosition);
+
 #endif /* SCENE_H */

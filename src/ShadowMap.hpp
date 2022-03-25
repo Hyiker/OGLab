@@ -4,23 +4,29 @@
 #include <glm/vec3.hpp>
 
 #include "Framebuffer.hpp"
+#include "GaussianBlur.hpp"
+#include "Quad.hpp"
 #include "Scene.hpp"
 #include "Texture.hpp"
 class ShadowMap {
-    Texture m_depth;
+    // MSM
+    Texture m_moments;
     Framebuffer m_framebuffer;
+    Renderbuffer m_renderbuffer;
     ShaderProgram m_shader;
     int m_width, m_height;
+    GaussianBlur m_blurer;
 
    public:
-    ShadowMap(ShaderProgram&& shaderProgram, int width = 1080,
-              int height = 1080)
+    ShadowMap(ShaderProgram&& shaderProgram, int width = 2048,
+              int height = 2048)
         : m_shader{std::move(shaderProgram)},
           m_width{width},
-          m_height{height} {}
+          m_height{height},
+          m_blurer(width, height) {}
     void init();
     void render(const Scene& scene, glm::vec3 sunPosition);
-    glm::mat4 getLightSpaceTransform(glm::vec3 lightPosition) const;
-    const Texture& getDepthTexture() const { return m_depth; }
+    void blur();
+    const Texture& getDepthTexture() const { return m_moments; }
 };
 #endif /* SHADOWMAP_H */

@@ -60,7 +60,11 @@ MyApplication::MyApplication(const string& path, int width, int height)
           ShaderProgram(
               {{SHADER_DIR "/shadowmapShader.vert", GL_VERTEX_SHADER},
                {SHADER_DIR "/shadowmapShader.frag", GL_FRAGMENT_SHADER}}),
-          getFramebufferWidth(), getFramebufferHeight()},
+          2048, 2048},
+      m_rsmbuffer{
+          ShaderProgram({{SHADER_DIR "/rsmShader.vert", GL_VERTEX_SHADER},
+                         {SHADER_DIR "/rsmShader.frag", GL_FRAGMENT_SHADER}}),
+          2048, 2048},
       m_gbuffer{
           ShaderProgram({{SHADER_DIR "/shader.vert", GL_VERTEX_SHADER},
                          {SHADER_DIR "/gShader.frag", GL_FRAGMENT_SHADER}}),
@@ -74,13 +78,14 @@ MyApplication::MyApplication(const string& path, int width, int height)
     m_scene.scale(vec3(0.0005));
 
     glEnable(GL_DEPTH_TEST);
-    glCheckError(__FILE__, __LINE__);
+    checkError();
     m_gbuffer.init();
-    glCheckError(__FILE__, __LINE__);
+    checkError();
     m_defrender.init();
-    glCheckError(__FILE__, __LINE__);
+    checkError();
     m_shadowmap.init();
-    glCheckError(__FILE__, __LINE__);
+    checkError();
+    m_rsmbuffer.init();
 
     glfwSetWindowUserPointer(getWindow(), this);
     glfwSetCursorPosCallback(getWindow(), mouseCallback);
@@ -93,12 +98,13 @@ void MyApplication::gui() {
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-    // get version info
+    // information
     const GLubyte* renderer = glGetString(GL_RENDERER);
     const GLubyte* version = glGetString(GL_VERSION);
     ImGui::Text("Renderer: %s", renderer);
     ImGui::Text("OpenGL Version: %s", version);
 
+    // object information
     ImGui::Separator();
     ImGui::Text("Meshes: %lu, Vertices: %lu", m_scene.countMesh(),
                 m_scene.countVertex());
@@ -123,11 +129,11 @@ void MyApplication::cameraMove() {
 
 void MyApplication::sunMove() {
     if (glfwGetKey(getWindow(), GLFW_KEY_UP) == GLFW_PRESS) {
-        m_sun_position.x += 10.0 * getFrameDeltaTime();
+        m_sun_position.x -= 10.0 * getFrameDeltaTime();
         m_sun_moved = true;
     }
     if (glfwGetKey(getWindow(), GLFW_KEY_DOWN) == GLFW_PRESS) {
-        m_sun_position.x -= 10.0 * getFrameDeltaTime();
+        m_sun_position.x += 10.0 * getFrameDeltaTime();
         m_sun_moved = true;
     }
     if (glfwGetKey(getWindow(), GLFW_KEY_LEFT) == GLFW_PRESS) {
@@ -143,7 +149,7 @@ void MyApplication::loop() {
     if (glfwWindowShouldClose(getWindow()) ||
         glfwGetKey(getWindow(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
         exit();
-
+    bool light_rerendered_flag = false;
     // input interact
     cameraMove();
     sunMove();
@@ -151,17 +157,24 @@ void MyApplication::loop() {
     // shadowmap
     if (m_sun_moved) {
         m_shadowmap.render(m_scene, m_sun_position);
-        m_sun_moved = false;
+        light_rerendered_flag = true;
     }
-    glCheckError(__FILE__, __LINE__);
+    checkError();
 
-    // gbuffer
+    // rsm buffer
+    if (m_sun_moved) {
+        m_rsmbuffer.render(m_scene, m_sun_position);
+        light_rerendered_flag = true;
+    }
+
+    // render gbuffer
     m_gbuffer.render(m_scene, m_cam);
-    glCheckError(__FILE__, __LINE__);
+    checkError();
 
-    // gbuffer
-    m_defrender.render(m_quad, m_gbuffer, m_shadowmap, m_cam, m_sun_position);
-    glCheckError(__FILE__, __LINE__);
+    // use gbuffer
+    m_defrender.render(m_quad, m_gbuffer, m_rsmbuffer, m_shadowmap, m_cam,
+                       m_sun_position);
+    checkError();
 
     // screen quad
     glClearColor(0, 0, 0, 1);
@@ -173,7 +186,9 @@ void MyApplication::loop() {
     m_quad.draw();
 
     glCheckError(__FILE__, __LINE__);
-    gui();
 
     glBindVertexArray(0);
+    gui();
+
+    if (light_rerendered_flag && m_sun_moved) m_sun_moved = false;
 }

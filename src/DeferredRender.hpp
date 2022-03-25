@@ -4,6 +4,7 @@
 #include "Framebuffer.hpp"
 #include "GBuffer.hpp"
 #include "Quad.hpp"
+#include "RSMBuffer.hpp"
 #include "Shader.hpp"
 #include "ShadowMap.hpp"
 #include "Texture.hpp"
@@ -12,6 +13,7 @@ class DeferredRender {
 
     Framebuffer m_framebuffer;
     ShaderProgram m_shader;
+    Texture m_random_tex;
     int m_width, m_height;
 
    public:
@@ -22,8 +24,8 @@ class DeferredRender {
           m_height{height} {}
     void init();
     void render(const Quad& quad, const GBuffer& gbuffer,
-                const ShadowMap& shadowmap, const Camera& cam,
-                glm::vec3 sunPosition);
+                const RSMBuffer& rsmbuffer, const ShadowMap& shadowmap,
+                const Camera& cam, glm::vec3 sunPosition);
     const Texture& getTexture() const { return m_texture; }
 };
 

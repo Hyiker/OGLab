@@ -5,8 +5,8 @@
  * Licence:
  *      * MIT
  */
-#ifndef OPENGL_CMAKE_SKELETON_SHADER_HPP
-#define OPENGL_CMAKE_SKELETON_SHADER_HPP
+#ifndef SHADER_H
+#define SHADER_H
 
 #define GLM_FORCE_RADIANS
 #include <glad/glad.h>
@@ -73,6 +73,7 @@ class ShaderProgram {
     // affect uniform
     void setUniform(const std::string& name, float x, float y, float z);
     void setUniform(const std::string& name, const glm::vec3& v);
+    void setUniform(const std::string& name, const glm::vec2& v);
     void setUniform(const std::string& name, const glm::dvec3& v);
     void setUniform(const std::string& name, const glm::vec4& v);
     void setUniform(const std::string& name, const glm::dvec4& v);
@@ -100,4 +101,4 @@ class ShaderProgram {
     void link();
 };
 
-#endif  // OPENGL_CMAKE_SKELETON_SHADER_HPP
+#endif /* SHADER_H */

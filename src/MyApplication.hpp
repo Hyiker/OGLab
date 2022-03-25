@@ -19,6 +19,7 @@
 #include "Framebuffer.hpp"
 #include "GBuffer.hpp"
 #include "Quad.hpp"
+#include "RSMBuffer.hpp"
 #include "Shader.hpp"
 #include "ShadowMap.hpp"
 
@@ -29,6 +30,7 @@ class MyApplication : public Application {
     bool m_sun_moved{true};
 
     ShadowMap m_shadowmap;
+    RSMBuffer m_rsmbuffer;
     GBuffer m_gbuffer;
     DeferredRender m_defrender;
 

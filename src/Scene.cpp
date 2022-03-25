@@ -17,7 +17,7 @@
 #include "tiny_obj_loader.h"
 
 using namespace std;
-
+using namespace glm;
 using namespace tinyobj;
 size_t hash<Vertex>::operator()(Vertex const& v) const {
     return ((hash<glm::vec3>()(v.position) ^
@@ -252,6 +252,15 @@ Scene::Scene(const std::string& path) {
     for (auto& mesh : m_meshes) {
         mesh.prepare();
     }
+}
+
+glm::mat4 getLightSpaceTransform(glm::vec3 lightPosition) {
+    vec3 target(0, 0, 0);
+    vec3 dir = normalize(target - lightPosition);
+    vec3 up{0.0f, 1.0f, 0.0f};
+    if (dir.x == 0.0f && dir.z == 0.0f) up = glm::vec3(1.0f, 0.0f, 0.0f);
+    return ortho(-1.5f, 1.5f, -1.5f, 1.5f, -1.5f, 1.5f) *
+           lookAt(vec3(0.0f), dir, up);
 }
 
 bool Vertex::operator==(const Vertex& v) const {

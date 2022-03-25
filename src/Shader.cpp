@@ -174,6 +174,9 @@ void ShaderProgram::setUniform(const std::string& name, float x, float y,
 void ShaderProgram::setUniform(const std::string& name, const vec3& v) {
     glUniform3fv(uniform(name), 1, value_ptr(v));
 }
+void ShaderProgram::setUniform(const std::string& name, const vec2& v) {
+    glUniform2fv(uniform(name), 1, value_ptr(v));
+}
 
 void ShaderProgram::setUniform(const std::string& name, const dvec3& v) {
     glUniform3dv(uniform(name), 1, value_ptr(v));

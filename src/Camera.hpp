@@ -25,8 +25,8 @@ class Camera {
     float pitch;
     float speed{0.25f};
     float sensitivity{0.2f};
-    float m_znear{0.1f};
-    float m_zfar{1000.f};
+    float m_znear{0.01f};
+    float m_zfar{50.f};
     float m_fov{float(M_PI) / 3.0f};
     float m_aspect;
 

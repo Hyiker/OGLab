@@ -49,5 +49,6 @@ void main() {
     float gamma = 2.2;
     color = pow(color, vec3(1.0 / gamma));
 
+    // FragColor = vec4(colorDbg, 1.0);
     FragColor = vec4(color, 1.0);
 }
