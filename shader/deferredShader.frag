@@ -126,7 +126,7 @@ vec3 calcIrradiance(in vec3 N, in vec3 viewDir, in vec3 albedo,
     vec3 kDiffuse = vec3(1.0) - kSpecular;
 
     vec3 specular = brdf(N, wi, wo, cosTheta, F);
-    Lo += (kDiffuse * albedo + specular) * radiance * dot(N, wi);
+    Lo += (kDiffuse * albedo + specular) * radiance * dot(N, wi) * PI_INV;
 
     return Lo;
 }
@@ -262,6 +262,48 @@ float calcShadow(in vec3 position, in ShadowMap shadowMap, in vec3 N, in vec3 L,
     return shadow;
 }
 
+#define ZNEAR 0.01
+#define ZFAR 50.0
+float linearizeDepth(float depth) {
+    float z = depth * 2.0 - 1.0;
+    return (2.0 * ZNEAR * ZFAR) / (ZFAR + ZNEAR - z * (ZFAR - ZNEAR));
+}
+uniform sampler2D uRandomHemisphereTex;
+uniform vec3 uRandomSamples[64];
+uniform mat4 uProjection;
+uniform mat4 uView;
+const vec2 noiseScale = vec2(1280.0 / 4.0, 960.0 / 4.0);
+float calcSSAO(in vec3 position, in vec3 normal) {
+    vec3 randomVec = texture(uRandomHemisphereTex, noiseScale * texCoord).xyz;
+    vec3 viewSpacePosition = (uView * vec4(position, 1.0)).xyz;
+
+    // rotate TBN matrix by randomvec texture
+    vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
+    vec3 bitangent = cross(normal, tangent);
+    mat3 TBN = mat3(tangent, bitangent, normal);
+
+    float occlusion = 0.0;
+    for (int i = 0; i < 64; ++i) {
+        vec3 sample = TBN * uRandomSamples[i];
+        sample = viewSpacePosition + sample * 1.0;
+
+        vec4 offset = vec4(sample, 1.0);
+        offset = uProjection * offset;
+        offset.xyz /= offset.w;
+        offset.xyz = offset.xyz * 0.5 + 0.5;
+
+        float sampleDepth =
+            linearizeDepth(texture(uGbuffer.depthTex, offset.xy).r);
+
+        // range check & accumulate
+        float rangeCheck =
+            smoothstep(0.0, 1.0, 1.0 / abs(viewSpacePosition.z + sampleDepth));
+
+        occlusion += (EPS <= sampleDepth + sample.z ? 1.0 : 0.0) * rangeCheck;
+    }
+    return 1.0 - (occlusion / 64.0);
+}
+
 void main(void) {
     vec3 position = texture(uGbuffer.positionTex, texCoord).xyz;
     vec3 albedo = texture(uGbuffer.albedoTex, texCoord).rgb;
@@ -281,14 +323,15 @@ void main(void) {
     float shadow = calcShadow(position, uShadowMap, normal, lightDir, shadowDbg,
                               lightCoord);
     vec3 dirIllumination =
-        calcIrradiance(normal, viewDir, albedo, vec3(5, 4, 4) * 2.0);
+        calcIrradiance(normal, viewDir, albedo, vec3(5, 4, 4));
     vec3 ambientIllumination = vec3(0.03) * albedo;
     vec3 indirIllumination =
-        doReflectiveShadowMapping(position, normal, lightCoord) * albedo;
+        doReflectiveShadowMapping(position, normal, lightCoord) * albedo *
+        PI_INV;
+    float ssao = calcSSAO(position, normal);
 
-    color =
-        vec4(dirIllumination * shadow + indirIllumination + ambientIllumination,
-             1.0);
-    // color = vec4(shadow);
-    // color = vec4(texture(uRSMBuffer.fluxTex, texCoord).rgb, 1.0);
+    color = vec4(dirIllumination * shadow + indirIllumination +
+                     ambientIllumination * ssao,
+                 1.0);
+    // color = vec4(vec3(ssao), 1.0);
 }

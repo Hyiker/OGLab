@@ -13,7 +13,8 @@ class DeferredRender {
 
     Framebuffer m_framebuffer;
     ShaderProgram m_shader;
-    Texture m_random_tex;
+    Texture m_random_tex, m_random_hemisphere_tex;
+    std::vector<glm::vec3> m_ssao_sample_kernel, m_ssao_sample_rotation;
     int m_width, m_height;
 
    public:
