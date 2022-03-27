@@ -53,7 +53,7 @@ struct Mesh {
 };
 class Scene {
     std::vector<Mesh> m_meshes;
-    glm::mat4 m_modelmat;
+    glm::mat4 m_modelmat{1.0};
 
    public:
     void scale(glm::vec3 ratio);
